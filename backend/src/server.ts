@@ -4,6 +4,10 @@ import { Server } from 'socket.io'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRoutes from './routes/authRoutes'
+import turmaRoutes from './routes/turmaRoutes'
+import alunoRoutes from './routes/alunoRoutes'
+import disciplinaRoutes from './routes/disciplinaRoutes'
+import checkinRoutes from './routes/checkinRoutes'
 
 dotenv.config()
 
@@ -20,6 +24,10 @@ app.use(express.json())
 
 // Rotas
 app.use('/auth', authRoutes)
+app.use('/turmas', turmaRoutes)
+app.use('/alunos', alunoRoutes)
+app.use('/disciplinas', disciplinaRoutes)
+app.use('/checkin', checkinRoutes)
 
 // Rota de teste
 app.get('/', (req, res) => {
