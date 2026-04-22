@@ -15,7 +15,8 @@ const app = express()
 const httpServer = http.createServer(app)
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST'],
   },
 })
 
