@@ -62,3 +62,19 @@ export const buscarAlunoPorTag = async (req: Request, res: Response) => {
     return res.status(500).json({ erro: 'Erro interno do servidor' })
   }
 }
+// Ranking de pontos por turma
+export const rankingPorTurma = async (req: Request, res: Response) => {
+  const { turmaId } = req.params
+
+  try {
+    const alunos = await prisma.aluno.findMany({
+      where: { turmaId: Number(turmaId) },
+      orderBy: { pontos: 'desc' },
+      include: { turma: true },
+    })
+
+    return res.json(alunos)
+  } catch (error) {
+    return res.status(500).json({ erro: 'Erro interno do servidor' })
+  }
+}
