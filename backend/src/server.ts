@@ -8,6 +8,7 @@ import turmaRoutes from './routes/turmaRoutes'
 import alunoRoutes from './routes/alunoRoutes'
 import disciplinaRoutes from './routes/disciplinaRoutes'
 import checkinRoutes from './routes/checkinRoutes'
+import presencaRoutes from './routes/presencaRoutes'
 
 dotenv.config()
 
@@ -22,6 +23,7 @@ const io = new Server(httpServer, {
 
 app.use(cors())
 app.use(express.json())
+app.use('/presencas', presencaRoutes)
 
 // Rotas
 app.use('/auth', authRoutes)
