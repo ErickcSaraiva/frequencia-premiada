@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "EduPoints",
+    "slug": "edupoints",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.edupoints.frequenciapremiada",
+      "permissions": [
+        "android.permission.NFC"
+      ]
+    },
+    "plugins": [
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Necessário para registrar presença dos alunos via tag NFC"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "78a1ab1d-05d2-4dd9-acd5-2b6c207a57e9"
+      }
+    }
+  }
+}
