@@ -25,8 +25,14 @@ export default function LoginScreen({ navigation }: any) {
       await AsyncStorage.setItem('token', response.data.token)
       await AsyncStorage.setItem('professor', JSON.stringify(response.data.professor))
       navigation.replace('Home')
-    } catch (error) {
-      Alert.alert('Erro', 'Email ou senha inválidos')
+    } catch (error: any) {
+      if (error.response) {
+        Alert.alert('Erro', error.response.data?.erro || 'Email ou senha inválidos')
+      } else if (error.request) {
+        Alert.alert('Erro de conexão', `Servidor não encontrado em ${API_URL}`)
+      } else {
+        Alert.alert('Erro', error.message)
+      }
     } finally {
       setCarregando(false)
     }

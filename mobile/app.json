@@ -19,7 +19,8 @@
       "package": "com.edupoints.frequenciapremiada",
       "permissions": [
         "android.permission.NFC"
-      ]
+      ],
+      "usesCleartextTraffic": true
     },
     "plugins": [
       [
