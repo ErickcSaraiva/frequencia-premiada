@@ -26,41 +26,14 @@ export default function CheckinScreen() {
     }
   }, [])
 
-  const lerTag = async () => {
-    setLendo(true)
-    setResultado(null)
-
-    try {
-      await NfcManager.requestTechnology(NfcTech.Ndef)
-      const tag = await NfcManager.getTag()
-      const tagId = tag?.id || ''
-
-      // Converte o ID da tag para string hexadecimal
-      const tagHex = Array.isArray(tagId)
-        ? tagId.map((b: number) => b.toString(16).padStart(2, '0')).join('').toUpperCase()
-        : String(tagId)
-
-      await registrarCheckin(tagHex)
-    } catch (error: any) {
-      if (error?.message !== 'cancelled') {
-        Alert.alert('Erro', 'Não foi possível ler a tag NFC')
-      }
-    } finally {
-      NfcManager.cancelTechnologyRequest()
-      setLendo(false)
-    }
-  }
-
   const registrarCheckin = async (tagNfc: string) => {
     try {
       const token = await AsyncStorage.getItem('token')
-
       const response = await axios.post(
         `${API_URL}/checkin`,
         { tag_nfc: tagNfc, disciplinaId: 1 },
         { headers: { Authorization: `Bearer ${token}` } }
       )
-
       setResultado({
         sucesso: true,
         mensagem: response.data.message,
@@ -73,6 +46,31 @@ export default function CheckinScreen() {
         mensagem: error.response?.data?.erro || 'Erro ao registrar presença',
         tag: tagNfc,
       })
+    }
+  }
+
+  const lerTag = async () => {
+    setLendo(true)
+    setResultado(null)
+    try {
+      await NfcManager.requestTechnology(NfcTech.Ndef)
+      const tag = await NfcManager.getTag()
+      const tagId = tag?.id || ''
+      const tagHex = Array.isArray(tagId)
+        ? tagId.map((b: number) => b.toString(16).padStart(2, '0')).join('').toUpperCase()
+        : String(tagId)
+      await registrarCheckin(tagHex)
+    } catch (error: any) {
+      if (error?.message !== 'cancelled') {
+        if (error.request) {
+          Alert.alert('Erro de conexão', `Não foi possível conectar ao servidor em ${API_URL}`)
+        } else {
+          Alert.alert('Erro', 'Não foi possível ler a tag NFC')
+        }
+      }
+    } finally {
+      NfcManager.cancelTechnologyRequest()
+      setLendo(false)
     }
   }
 
