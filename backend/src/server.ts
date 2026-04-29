@@ -9,6 +9,7 @@ import alunoRoutes from './routes/alunoRoutes'
 import disciplinaRoutes from './routes/disciplinaRoutes'
 import checkinRoutes from './routes/checkinRoutes'
 import presencaRoutes from './routes/presencaRoutes'
+import lgpdRoutes from './routes/lgpdRoutes'
 
 dotenv.config()
 
@@ -31,7 +32,7 @@ app.use('/turmas', turmaRoutes)
 app.use('/alunos', alunoRoutes)
 app.use('/disciplinas', disciplinaRoutes)
 app.use('/checkin', checkinRoutes)
-
+app.use('/lgpd', lgpdRoutes)
 // Rota de teste
 app.get('/', (req, res) => {
   res.json({ message: 'Frequência Premiada API rodando! 🚀' })
