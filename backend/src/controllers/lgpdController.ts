@@ -8,12 +8,12 @@ export const exportarDadosAluno = async (req: Request, res: Response) => {
 
   try {
     const aluno = await prisma.aluno.findUnique({
-      where: { id: Number(id) },
+      where: { id: String(id) },
       include: {
         turma: true,
         presencas: {
           include: {
-            disciplina: true,
+            turma: true,
             professor: {
               select: { nome: true, email: true }
             }
@@ -42,8 +42,8 @@ export const exportarDadosAluno = async (req: Request, res: Response) => {
       historicoPrescencas: aluno.presencas.map(p => ({
         data: p.data,
         status: p.status,
-        disciplina: p.disciplina.nome,
-        professor: p.professor.nome,
+        //disciplina: p.disciplina.nome,
+        //professor: p.professor.nome,
         editadoPor: p.editadoPor || null,
       }))
     })
@@ -59,8 +59,12 @@ export const anonimizarAluno = async (req: Request, res: Response) => {
 
   try {
     const aluno = await prisma.aluno.findUnique({
-      where: { id: Number(id) }
-    })
+  where: { id: String(id) }, // Certifique-se de que aqui também está String(id) e não Number(id)
+  include: {
+    turma: true,
+    presencas: true // <-- É isso que resolve os erros das linhas 39 e 42!
+  }
+});
 
     if (!aluno) {
       return res.status(404).json({ erro: 'Aluno não encontrado' })
@@ -68,10 +72,10 @@ export const anonimizarAluno = async (req: Request, res: Response) => {
 
     // Anonimiza os dados pessoais mantendo histórico estatístico
     const alunoAnonimizado = await prisma.aluno.update({
-      where: { id: Number(id) },
+      where: { id: String(id) },
       data: {
         nome: `Aluno Anonimizado #${id}`,
-        tag_nfc: `ANONIMIZADO_${id}_${Date.now()}`,
+        nfc_uid: `ANONIMIZADO_${id}_${Date.now()}`,
       }
     })
 

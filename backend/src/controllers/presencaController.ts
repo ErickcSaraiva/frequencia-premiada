@@ -10,7 +10,7 @@ export const editarPresenca = async (req: Request, res: Response) => {
 
   try {
     const presencaExiste = await prisma.presenca.findUnique({
-      where: { id: Number(id) },
+      where: { id: String(id) },
     })
 
     if (!presencaExiste) {
@@ -24,12 +24,12 @@ export const editarPresenca = async (req: Request, res: Response) => {
     }
 
     const presencaAtualizada = await prisma.presenca.update({
-      where: { id: Number(id) },
+      where: { id: String(id) },
       data: {
         status,
         editadoPor: professor.email,
       },
-      include: { aluno: true, disciplina: true },
+      include: { aluno: true, turma: true },
     })
 
     // Se mudou para justificada, não desconta pontos
@@ -72,7 +72,8 @@ export const lancarFaltaJustificada = async (req: Request, res: Response) => {
 
   try {
     const aluno = await prisma.aluno.findUnique({
-      where: { id: Number(alunoId) },
+      where: { id: String(alunoId) },
+      include: { turma: true },
     })
 
     if (!aluno) {
@@ -81,7 +82,7 @@ export const lancarFaltaJustificada = async (req: Request, res: Response) => {
 
     const presenca = await prisma.presenca.create({
       data: {
-        alunoId: Number(alunoId),
+        alunoId: String(alunoId),
         turmaId: aluno.turmaId,
         disciplinaId: Number(disciplinaId),
         professorId: professor.id,
@@ -89,7 +90,7 @@ export const lancarFaltaJustificada = async (req: Request, res: Response) => {
         editadoPor: professor.email,
         data: data ? new Date(data) : new Date(),
       },
-      include: { aluno: true, disciplina: true },
+      include: { aluno: true, turma: true },
     })
 
     return res.status(201).json({

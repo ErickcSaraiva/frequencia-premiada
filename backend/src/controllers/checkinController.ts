@@ -10,7 +10,7 @@ export const registrarCheckin = async (req: Request, res: Response) => {
   try {
     // Busca o aluno pela tag NFC
     const aluno = await prisma.aluno.findUnique({
-      where: { tag_nfc },
+      where: { nfc_uid: tag_nfc },
       include: { turma: true },
     })
 
@@ -90,8 +90,8 @@ export const listarPresencasPorTurma = async (req: Request, res: Response) => {
 
   try {
     const presencas = await prisma.presenca.findMany({
-      where: { turmaId: Number(turmaId) },
-      include: { aluno: true, disciplina: true },
+      where: { turmaId: String(turmaId) },
+      include: { aluno: true, turma: true },
       orderBy: { data: 'desc' },
     })
 

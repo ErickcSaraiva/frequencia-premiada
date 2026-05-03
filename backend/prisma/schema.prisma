@@ -7,48 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Professor {
-  id        Int        @id @default(autoincrement())
+model Aluno {
+  id        String  @id @default(uuid())
   nome      String
-  email     String     @unique
-  senha     String
+  matricula String  @unique
+  nfc_uid   String? @unique
+  pontos    Int     @default(0)
+
+  turma   Turma  @relation(fields: [turmaId], references: [id])
+  turmaId String
+
   presencas Presenca[]
 }
 
 model Turma {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(uuid())
   nome      String
   alunos    Aluno[]
   presencas Presenca[]
-}
 
-model Disciplina {
-  id        Int        @id @default(autoincrement())
-  nome      String
-  presencas Presenca[]
-}
-
-model Aluno {
-  id        Int        @id @default(autoincrement())
-  nome      String
-  tag_nfc   String     @unique
-  pontos    Int        @default(0)
-  turmaId   Int
-  turma     Turma      @relation(fields: [turmaId], references: [id])
-  presencas Presenca[]
+  disciplina   Disciplina? @relation(fields: [disciplinaId], references: [id])
+  disciplinaId String?
 }
 
 model Presenca {
-  id           Int        @id @default(autoincrement())
-  alunoId      Int
-  turmaId      Int
-  disciplinaId Int
-  professorId  Int
-  data         DateTime   @default(now())
-  status       String
-  editadoPor   String?
-  aluno        Aluno      @relation(fields: [alunoId], references: [id])
-  turma        Turma      @relation(fields: [turmaId], references: [id])
-  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id])
-  professor    Professor  @relation(fields: [professorId], references: [id])
+  id         String   @id @default(uuid())
+  data       DateTime @default(now())
+  status     String
+  editadoPor String?
+
+  aluno   Aluno  @relation(fields: [alunoId], references: [id])
+  alunoId String
+
+  turma   Turma  @relation(fields: [turmaId], references: [id])
+  turmaId String
+}
+
+model Professor {
+  id    String @id @default(uuid())
+  nome  String
+  email String @unique
+  senha String
+}
+
+model Disciplina {
+  id     String  @id @default(uuid())
+  nome   String
+  turmas Turma[]
 }
