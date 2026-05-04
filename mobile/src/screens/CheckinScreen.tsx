@@ -7,7 +7,7 @@ import NfcManager, { NfcTech } from 'react-native-nfc-manager'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import axios from 'axios'
 
-const API_URL = 'http://192.168.101.13:3333'
+const API_URL = 'https://tavern-buzz-helpless.ngrok-free.dev'
 
 export default function CheckinScreen() {
   const [lendo, setLendo] = useState(false)
@@ -101,7 +101,12 @@ export default function CheckinScreen() {
       {resultado && (
         <View style={[
           styles.resultado,
-          resultado.sucesso ? styles.resultadoSucesso : styles.resultadoErro
+          resultad,
+          
+          
+          
+          
+          6o.sucesso ? styles.resultadoSucesso : styles.resultadoErro
         ]}>
           <Text style={styles.resultadoIcone}>
             {resultado.sucesso ? '✅' : '❌'}

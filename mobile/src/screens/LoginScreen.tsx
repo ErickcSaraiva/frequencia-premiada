@@ -6,7 +6,7 @@ import {
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const API_URL = 'http://192.168.101.13:3333'
+const API_URL = 'https://tavern-buzz-helpless.ngrok-free.dev'
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
