@@ -4,8 +4,10 @@ import {
   StyleSheet, Alert
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useNavigation } from '@react-navigation/native' // 1. Adicione essa importação
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen() { // 2. Remova o { navigation } daqui
+  const navigation = useNavigation<any>() // 3. Inicialize a navegação aqui
   const [professor, setProfessor] = useState<any>(null)
 
   useEffect(() => {
@@ -17,7 +19,7 @@ export default function HomeScreen({ navigation }: any) {
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token')
     await AsyncStorage.removeItem('professor')
-    navigation.replace('Login')
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) // Jeito novo de dar reset v7
   }
 
   return (
@@ -25,6 +27,7 @@ export default function HomeScreen({ navigation }: any) {
       <Text style={styles.bemVindo}>Olá, {professor?.nome || 'Professor'} 👋</Text>
       <Text style={styles.subtitulo}>O que deseja fazer?</Text>
 
+      {/* Botão Registrar */}
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('Checkin')}
@@ -34,7 +37,14 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.cardDesc}>Aproxime a tag NFC do aluno para registrar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.card, styles.cardSecundario]}>
+      {/* Botão Ver Presenças corrigido */}
+      <TouchableOpacity 
+        style={[styles.card, styles.cardSecundario]}
+        onPress={() => {
+          console.log("Tentando navegar para Presencas...");
+          navigation.navigate('Presencas');
+        }} 
+      >
         <Text style={styles.cardIcon}>📊</Text>
         <Text style={styles.cardTitulo}>Ver Presenças</Text>
         <Text style={styles.cardDesc}>Consulte o histórico da turma</Text>
@@ -46,6 +56,7 @@ export default function HomeScreen({ navigation }: any) {
     </View>
   )
 }
+// ... mantenha os estilos iguais ...
 
 const styles = StyleSheet.create({
   container: {

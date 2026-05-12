@@ -67,13 +67,12 @@ export const editarPresenca = async (req: Request, res: Response) => {
 
 // Lançar falta justificada para um aluno
 export const lancarFaltaJustificada = async (req: Request, res: Response) => {
-  const { alunoId, disciplinaId, data, justificativa } = req.body
+  const { alunoId, data } = req.body
   const professor = (req as any).professor
 
   try {
     const aluno = await prisma.aluno.findUnique({
       where: { id: String(alunoId) },
-      include: { turma: true },
     })
 
     if (!aluno) {
@@ -84,8 +83,6 @@ export const lancarFaltaJustificada = async (req: Request, res: Response) => {
       data: {
         alunoId: String(alunoId),
         turmaId: aluno.turmaId,
-        disciplinaId: Number(disciplinaId),
-        professorId: professor.id,
         status: 'justificada',
         editadoPor: professor.email,
         data: data ? new Date(data) : new Date(),
@@ -109,7 +106,7 @@ export const listarAuditoria = async (req: Request, res: Response) => {
       where: {
         editadoPor: { not: null },
       },
-      include: { aluno: true, disciplina: true },
+      include: { aluno: true }, 
       orderBy: { data: 'desc' },
       take: 50,
     })
@@ -117,5 +114,69 @@ export const listarAuditoria = async (req: Request, res: Response) => {
     return res.json(edicoes)
   } catch (error) {
     return res.status(500).json({ erro: 'Erro interno do servidor' })
+  }
+}
+
+// Registrar presença via NFC (App Mobile)
+export const registrarPresenca = async (req: Request, res: Response) => {
+  const { nfc_uid } = req.body
+
+  if (!nfc_uid) {
+    return res.status(400).json({ erro: 'Código NFC é obrigatório' })
+  }
+
+  try {
+    // 1. Busca o aluno pelo código da tag
+    const aluno = await prisma.aluno.findUnique({
+      where: { nfc_uid },
+    })
+
+    if (!aluno) {
+      return res.status(404).json({ erro: 'Aluno não encontrado com este cartão' })
+    }
+
+    // 2. Registra a presença oficial
+    const presenca = await prisma.presenca.create({
+      data: {
+        alunoId: aluno.id,
+        turmaId: aluno.turmaId,
+        status: 'presente',
+        data: new Date(),
+      },
+      include: { aluno: true },
+    })
+
+    // 3. Gamificação: Adiciona 10 pontos para o aluno que compareceu
+    await prisma.aluno.update({
+      where: { id: aluno.id },
+      data: { pontos: { increment: 10 } },
+    })
+
+    // 4. Aciona o WebSocket para atualizar o Dashboard
+    io.emit('presenca:nova', presenca)
+
+    return res.status(201).json({
+      message: 'Presença registrada com sucesso!',
+      presenca,
+    })
+  } catch (error) {
+    console.error("Erro no registro via NFC:", error)
+    return res.status(500).json({ erro: 'Erro interno do servidor' })
+  }
+}
+// Listar todas as presenças (Caminho Feliz para o App!)
+export const listarPresencas = async (req: Request, res: Response) => {
+  try {
+    const presencas = await prisma.presenca.findMany({
+      include: {
+        aluno: true, // Isso traz o nome do aluno junto
+      },
+      orderBy: {
+        data: 'desc', // Mostra as mais recentes primeiro
+      },
+    })
+    return res.json(presencas)
+  } catch (error) {
+    return res.status(500).json({ erro: 'Erro ao listar presenças' })
   }
 }

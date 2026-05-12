@@ -53,4 +53,4 @@ httpServer.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
 })
 
-export { io }
+export { io, app }

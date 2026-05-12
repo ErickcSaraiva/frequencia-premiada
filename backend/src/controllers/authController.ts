@@ -31,25 +31,33 @@ export const cadastrarProfessor = async (req: Request, res: Response) => {
   }
 }
 
-// Login do professor
-export const loginProfessor = async (req: Request, res: Response) => {
+// Login do professor (Agora com a validação do CT04 inclusa!)
+export const login = async (req: Request, res: Response) => {
   const { email, senha } = req.body
+
+  // Validação: Campos vazios retornam status 400 ANTES de bater no banco
+  if (!email || !senha) {
+    return res.status(400).json({ erro: 'Email e senha são obrigatórios' })
+  }
 
   try {
     const professor = await prisma.professor.findUnique({
       where: { email },
     })
 
+    // Validação: Usuário inexistente
     if (!professor) {
       return res.status(401).json({ erro: 'Email ou senha inválidos' })
     }
 
     const senhaValida = await bcrypt.compare(senha, professor.senha)
 
+    // Validação: Senha incorreta
     if (!senhaValida) {
       return res.status(401).json({ erro: 'Email ou senha inválidos' })
     }
 
+    // Sucesso: Retorna 200 e Token
     const token = jwt.sign(
       { id: professor.id, email: professor.email },
       process.env.JWT_SECRET as string,
@@ -65,3 +73,7 @@ export const loginProfessor = async (req: Request, res: Response) => {
     return res.status(500).json({ erro: 'Erro interno do servidor' })
   }
 }
+
+// Caso as suas rotas estejam importando exatamente o nome "loginProfessor",
+// mantenha este alias aqui para não quebrar o arquivo authRoutes.ts
+export const loginProfessor = login;

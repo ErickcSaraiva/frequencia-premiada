@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import LoginScreen from './src/screens/LoginScreen'
 import HomeScreen from './src/screens/HomeScreen'
 import CheckinScreen from './src/screens/CheckinScreen'
+import PresencasScreen from './src/screens/PresencasScreen'
 
 const Stack = createStackNavigator()
 
@@ -20,6 +21,11 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: '🎓 EduPoints' }} />
+        <Stack.Screen 
+  name="Presencas" 
+  component={PresencasScreen} 
+  options={{ title: '📋 Histórico de Presenças' }} 
+/>
         <Stack.Screen name="Checkin" component={CheckinScreen} options={{ title: '📱 Registrar Presença' }} />
       </Stack.Navigator>
     </NavigationContainer>

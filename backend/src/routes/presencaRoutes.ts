@@ -1,9 +1,19 @@
 import { Router } from 'express'
-import { editarPresenca, lancarFaltaJustificada, listarAuditoria } from '../controllers/presencaController'
+import { 
+  editarPresenca, 
+  lancarFaltaJustificada, 
+  listarAuditoria, 
+  registrarPresenca,
+  listarPresencas // Importe a função nova aqui!
+} from '../controllers/presencaController'
 import { autenticar } from '../middlewares/authMiddleware'
 
 const router = Router()
 
+// Rota que o App Mobile chama (GET /presencas)
+router.get('/', autenticar, listarPresencas) 
+
+router.post('/', autenticar, registrarPresenca)
 router.put('/:id', autenticar, editarPresenca)
 router.post('/justificada', autenticar, lancarFaltaJustificada)
 router.get('/auditoria', autenticar, listarAuditoria)
