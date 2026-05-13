@@ -24,9 +24,9 @@ export default function App() {
         <Stack.Screen 
   name="Presencas" 
   component={PresencasScreen} 
-  options={{ title: '📋 Histórico de Presenças' }} 
+  options={{ headerShown: false }} 
 />
-        <Stack.Screen name="Checkin" component={CheckinScreen} options={{ title: '📱 Registrar Presença' }} />
+        <Stack.Screen name="Checkin" component={CheckinScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   )
