@@ -89,7 +89,7 @@ export default function Login() {
       </section>
 
       <footer className="login-footer">
-        <p>© 2024 EduPoints Attendance System</p>
+        <p>© 2026 EduPoints Attendance System</p>
         <nav aria-label="Links institucionais">
           <a href="#" onClick={(event) => event.preventDefault()}>Políticas</a>
           <a href="#" onClick={(event) => event.preventDefault()}>Privacidade</a>

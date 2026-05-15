@@ -1,112 +1,42 @@
-import { useEffect, useState } from 'react'
-import {
-  View, Text, TouchableOpacity,
-  StyleSheet, Alert
-} from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useNavigation } from '@react-navigation/native' // 1. Adicione essa importação
 
-export default function HomeScreen() { // 2. Remova o { navigation } daqui
-  const navigation = useNavigation<any>() // 3. Inicialize a navegação aqui
-  const [professor, setProfessor] = useState<any>(null)
-
-  useEffect(() => {
-    AsyncStorage.getItem('professor').then(data => {
-      if (data) setProfessor(JSON.parse(data))
-    })
-  }, [])
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token')
-    await AsyncStorage.removeItem('professor')
-    navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) // Jeito novo de dar reset v7
+export default function HomeScreen({ navigation }: any) {
+  const logout = async () => {
+    await AsyncStorage.multiRemove(['token', 'professor'])
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.bemVindo}>Olá, {professor?.nome || 'Professor'} 👋</Text>
-      <Text style={styles.subtitulo}>O que deseja fazer?</Text>
+      <Text style={styles.top}>EduPoints</Text>
+      <Text style={styles.title}>Olá, Professor</Text>
+      <Text style={styles.sub}>Pronto para gerenciar suas turmas hoje?</Text>
 
-      {/* Botão Registrar */}
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('Checkin')}
-      >
-        <Text style={styles.cardIcon}>📱</Text>
-        <Text style={styles.cardTitulo}>Registrar Presença</Text>
-        <Text style={styles.cardDesc}>Aproxime a tag NFC do aluno para registrar</Text>
+      <TouchableOpacity style={[styles.card, styles.cardPrimary]} onPress={() => navigation.navigate('Checkin')}>
+        <Text style={styles.cardTitle}>Registrar Presença</Text>
+        <Text style={styles.cardText}>Inicie a leitura dos cartões NFC dos alunos.</Text>
       </TouchableOpacity>
 
-      {/* Botão Ver Presenças corrigido */}
-      <TouchableOpacity 
-        style={[styles.card, styles.cardSecundario]}
-        onPress={() => {
-          console.log("Tentando navegar para Presencas...");
-          navigation.navigate('Presencas');
-        }} 
-      >
-        <Text style={styles.cardIcon}>📊</Text>
-        <Text style={styles.cardTitulo}>Ver Presenças</Text>
-        <Text style={styles.cardDesc}>Consulte o histórico da turma</Text>
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Presencas')}>
+        <Text style={styles.cardTitle}>Ver Presenças</Text>
+        <Text style={styles.cardText}>Consulte histórico e status dos estudantes.</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.botaoSair} onPress={handleLogout}>
-        <Text style={styles.botaoSairTexto}>Sair</Text>
-      </TouchableOpacity>
+      <TouchableOpacity style={styles.logout} onPress={logout}><Text style={styles.logoutText}>Sair</Text></TouchableOpacity>
     </View>
   )
 }
-// ... mantenha os estilos iguais ...
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a2e',
-    padding: 24,
-  },
-  bemVindo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  subtitulo: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: 32,
-  },
-  card: {
-    backgroundColor: 'rgba(99,179,237,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(99,179,237,0.3)',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-  },
-  cardSecundario: {
-    backgroundColor: 'rgba(72,199,142,0.1)',
-    borderColor: 'rgba(72,199,142,0.3)',
-  },
-  cardIcon: { fontSize: 32, marginBottom: 8 },
-  cardTitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  cardDesc: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  botaoSair: {
-    marginTop: 'auto',
-    backgroundColor: 'rgba(255,107,107,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,107,0.3)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  botaoSairTexto: { color: '#ff6b6b', fontWeight: 'bold', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#060D1E', padding: 24 },
+  top: { color: '#B6CBFF', fontSize: 40, fontWeight: '800', marginTop: 8 },
+  title: { color: '#E2E7F2', fontSize: 48, fontWeight: '900', marginTop: 24 },
+  sub: { color: '#AAB2C5', fontSize: 18, marginBottom: 28 },
+  card: { backgroundColor: '#121A33', borderWidth: 1, borderColor: '#243252', borderRadius: 20, padding: 24, marginBottom: 16 },
+  cardPrimary: { borderColor: '#3559A8' },
+  cardTitle: { color: '#B9C9FB', fontSize: 34, fontWeight: '700', marginBottom: 8 },
+  cardText: { color: '#B0B8CA', fontSize: 20, lineHeight: 28 },
+  logout: { marginTop: 'auto', padding: 16, alignItems: 'center' },
+  logoutText: { color: '#93A4D3', fontSize: 18 },
 })
