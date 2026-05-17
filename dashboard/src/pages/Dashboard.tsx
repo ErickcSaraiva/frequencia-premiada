@@ -353,7 +353,7 @@ function HomeView({ navigate, handleLogout }: { navigate: (path: string) => void
         <img src={heroAsset} alt="Camadas abstratas do sistema EduPoints" />
         <div>
           <span>Sistema ativo</span>
-          <strong>Campus Principal • Bloco B</strong>
+          <strong>Escola Municipal • Bloco B</strong>
         </div>
       </section>
 

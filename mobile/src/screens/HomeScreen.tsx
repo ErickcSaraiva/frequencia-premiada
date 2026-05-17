@@ -27,7 +27,6 @@ export default function HomeScreen({ navigation }: any) {
     </View>
   )
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#060D1E', padding: 24 },
   top: { color: '#B6CBFF', fontSize: 40, fontWeight: '800', marginTop: 8 },

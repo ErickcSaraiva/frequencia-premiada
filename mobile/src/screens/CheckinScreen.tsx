@@ -287,7 +287,7 @@ export default function CheckinScreen({ navigation }: any) {
               />
             ) : (
               <Text style={styles.nfcIcon}>
-                ▣
+                📡
               </Text>
             )}
           </TouchableOpacity>
@@ -373,7 +373,7 @@ export default function CheckinScreen({ navigation }: any) {
             }
           >
             <Text style={styles.manualIcon}>
-              ▧
+              🕒
             </Text>
 
             <Text style={styles.manualText}>
@@ -405,68 +405,6 @@ export default function CheckinScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
-
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() =>
-            navigation.navigate('Home')
-          }
-        >
-          <Text style={styles.navIcon}>
-            ⌂
-          </Text>
-
-          <Text style={styles.navText}>
-            Início
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.navItem,
-            styles.navItemActive,
-          ]}
-        >
-          <Text style={styles.navIconActive}>
-            ▣
-          </Text>
-
-          <Text style={styles.navTextActive}>
-            Presença
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() =>
-            navigation.navigate('Presencas')
-          }
-        >
-          <Text style={styles.navIcon}>
-            ▤
-          </Text>
-
-          <Text style={styles.navText}>
-            Relatórios
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() =>
-            navigation.navigate('Home')
-          }
-        >
-          <Text style={styles.navIcon}>
-            ♙
-          </Text>
-
-          <Text style={styles.navText}>
-            Perfil
-          </Text>
-        </TouchableOpacity>
-      </View>
 
       <Modal
         transparent
@@ -838,56 +776,6 @@ const styles = StyleSheet.create({
   footerLink: {
     color: '#8c909f',
     fontSize: 17,
-    fontWeight: '800',
-  },
-
-  bottomNav: {
-    height: 86,
-    borderTopWidth: 1,
-    borderTopColor:
-      colors.outlineVariant,
-    backgroundColor: '#171a22',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 14,
-  },
-
-  navItem: {
-    minWidth: 76,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  navItemActive: {
-    minWidth: 140,
-    borderRadius: 32,
-    backgroundColor:
-      colors.primaryContainer,
-  },
-
-  navIcon: {
-    color: colors.onSurfaceVariant,
-    fontSize: 28,
-    fontWeight: '900',
-  },
-
-  navIconActive: {
-    color: colors.onPrimaryContainer,
-    fontSize: 26,
-    fontWeight: '900',
-  },
-
-  navText: {
-    color: colors.onSurfaceVariant,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-
-  navTextActive: {
-    color: colors.onPrimaryContainer,
-    fontSize: 18,
     fontWeight: '800',
   },
 

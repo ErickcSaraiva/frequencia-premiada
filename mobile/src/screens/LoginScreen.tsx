@@ -17,7 +17,7 @@ export default function LoginScreen({ navigation }: any) {
       const response = await axios.post(`${API_URL}/auth/login`, { email, senha })
       await AsyncStorage.setItem('token', response.data.token)
       await AsyncStorage.setItem('professor', JSON.stringify(response.data.professor))
-      navigation.replace('Home')
+      navigation.replace('MainTabs')
     } catch (error: any) {
       Alert.alert('Erro', error.response?.data?.erro || 'Falha ao autenticar')
     } finally {
@@ -30,7 +30,7 @@ export default function LoginScreen({ navigation }: any) {
       <Text style={styles.brand}>EduPoints</Text>
       <Text style={styles.subtitle}>Gestão de presença inteligente</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>E-MAIL ACADÊMICO</Text>
+        <Text style={styles.label}>E-MAIL</Text>
         <TextInput style={styles.input} placeholder="nome@instituicao.edu" placeholderTextColor="#6E7890" value={email} onChangeText={setEmail} autoCapitalize="none" />
         <Text style={styles.label}>SENHA</Text>
         <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor="#6E7890" value={senha} onChangeText={setSenha} secureTextEntry />

@@ -403,46 +403,6 @@ export default function PresencasScreen({ navigation }: any) {
       >
         <Text style={styles.fabIcon}>▣</Text>
       </TouchableOpacity>
-
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.navIcon}>⌂</Text>
-          <Text style={styles.navText}>Início</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.navItem,
-            styles.navItemActive,
-          ]}
-        >
-          <Text style={styles.navIconActive}>
-            ▣
-          </Text>
-
-          <Text style={styles.navTextActive}>
-            Presença
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>▤</Text>
-          <Text style={styles.navText}>
-            Relatórios
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.navIcon}>♙</Text>
-          <Text style={styles.navText}>Perfil</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   )
 }
@@ -468,7 +428,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-
   topbar: {
     height: 64,
     paddingHorizontal: 24,
@@ -478,20 +437,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   topbarIcon: {
     width: 34,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   topbarIconText: {
     color: colors.primary,
     fontSize: 30,
     fontWeight: '700',
   },
-
   brand: {
     flex: 1,
     color: colors.primary,
@@ -499,33 +455,27 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     marginLeft: 12,
   },
-
   scroll: {
     flex: 1,
   },
-
   content: {
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 140,
   },
-
   classHeader: {
     marginBottom: 28,
   },
-
   classTitle: {
     color: colors.onSurface,
     fontSize: 38,
     fontWeight: '900',
   },
-
   classSubtitle: {
     color: colors.onSurfaceVariant,
     fontSize: 20,
     marginTop: 8,
   },
-
   summaryCard: {
     backgroundColor: colors.surface,
     borderRadius: 18,
@@ -534,27 +484,23 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 24,
   },
-
   summaryLabel: {
     color: colors.onSurfaceVariant,
     fontSize: 16,
     fontWeight: '800',
   },
-
   summaryValue: {
     color: colors.primary,
     fontSize: 54,
     fontWeight: '900',
     marginTop: 8,
   },
-
   summaryTrend: {
     color: colors.success,
     marginTop: 6,
     fontSize: 15,
     fontWeight: '700',
   },
-
   search: {
     backgroundColor: '#0F172C',
     borderWidth: 1,
@@ -565,16 +511,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 18,
   },
-
   filterScroll: {
     marginBottom: 24,
   },
-
   filterContent: {
     gap: 12,
     paddingRight: 20,
   },
-
   filterButton: {
     paddingHorizontal: 18,
     paddingVertical: 12,
@@ -583,25 +526,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.outlineVariant,
   },
-
   filterButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-
   filterText: {
     color: colors.onSurfaceVariant,
     fontWeight: '700',
   },
-
   filterTextActive: {
     color: colors.onPrimaryContainer,
   },
-
   loadingContainer: {
     paddingVertical: 60,
   },
-
   card: {
     backgroundColor: '#111A31',
     borderWidth: 1,
@@ -612,12 +550,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   selected: {
     borderWidth: 2,
     borderColor: '#9CBEFF',
   },
-
   avatar: {
     width: 58,
     height: 58,
@@ -626,35 +562,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
   },
-
   avatarText: {
     color: '#fff',
     fontWeight: '900',
     fontSize: 18,
   },
-
   cardInfo: {
     flex: 1,
   },
-
   nome: {
     color: '#DEE5FB',
     fontSize: 22,
     fontWeight: '800',
   },
-
   curso: {
     color: '#B0B9D3',
     fontSize: 16,
     marginTop: 4,
   },
-
   freq: {
     color: '#A7B6DB',
     fontSize: 14,
     marginTop: 6,
   },
-
   badge: {
     color: '#AFC2F3',
     backgroundColor: '#273A63',
@@ -665,7 +595,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-
   confirm: {
     backgroundColor: '#9BC0FF',
     borderRadius: 16,
@@ -673,45 +602,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 18,
   },
-
   confirmText: {
     color: '#0B2159',
     fontWeight: '900',
     fontSize: 22,
   },
-
   statusChip: {
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-
   statusText: {
     fontSize: 11,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
-
   statusPresente: {
     backgroundColor: 'rgba(74,222,128,0.14)',
     borderColor: 'rgba(74,222,128,0.24)',
   },
-
   statusFalta: {
     backgroundColor: 'rgba(255,180,171,0.14)',
     borderColor: 'rgba(255,180,171,0.28)',
   },
-
   statusJustificada: {
     backgroundColor: 'rgba(173,198,255,0.14)',
     borderColor: 'rgba(173,198,255,0.28)',
   },
-
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 100,
+    bottom: 20,
     width: 82,
     height: 82,
     borderRadius: 41,
@@ -720,58 +642,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 8,
   },
-
   fabIcon: {
     color: colors.onPrimaryContainer,
     fontSize: 32,
     fontWeight: '900',
-  },
-
-  bottomNav: {
-    height: 86,
-    borderTopWidth: 1,
-    borderTopColor: colors.outlineVariant,
-    backgroundColor: '#171a22',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 14,
-  },
-
-  navItem: {
-    minWidth: 76,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  navItemActive: {
-    minWidth: 130,
-    borderRadius: 32,
-    backgroundColor: colors.primaryContainer,
-  },
-
-  navIcon: {
-    color: colors.onSurfaceVariant,
-    fontSize: 27,
-    fontWeight: '900',
-  },
-
-  navIconActive: {
-    color: colors.onPrimaryContainer,
-    fontSize: 25,
-    fontWeight: '900',
-  },
-
-  navText: {
-    color: colors.onSurfaceVariant,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-
-  navTextActive: {
-    color: colors.onPrimaryContainer,
-    fontSize: 17,
-    fontWeight: '800',
   },
 })
