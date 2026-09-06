@@ -43,6 +43,13 @@ app.use('/checkin', checkinRoutes)
 app.use('/lgpd', lgpdRoutes)
 app.use('/professores', professorRoutes) // 👈 2. Registre o endpoint do professor aqui
 
+// Health check usado pelo Render para confirmar que o processo HTTP está ativo.
+// Ele não consulta o banco: uma indisponibilidade temporária do PostgreSQL não deve
+// fazer a plataforma reiniciar continuamente um processo que continua saudável.
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' })
+})
+
 // Rota de teste
 app.get('/', (req, res) => {
   res.json({ message: 'Frequência Premiada API rodando! 🚀' })

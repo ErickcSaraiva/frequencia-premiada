@@ -237,3 +237,8 @@ Todos os três checks precisam ficar verdes antes do merge. Depois que o workflo
 - `backend-checks`
 - `dashboard-checks`
 - `mobile-checks`
+
+## 🌐 Publicação
+
+O repositório inclui configuração para publicar o dashboard na Vercel e o
+backend com PostgreSQL no Render. Consulte o passo a passo em [`DEPLOY.md`](DEPLOY.md).
