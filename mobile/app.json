@@ -20,7 +20,7 @@
       "permissions": [
         "android.permission.NFC"
       ],
-      "usesCleartextTraffic": true
+      "versionCode": 1
     },
     "plugins": [
       [
