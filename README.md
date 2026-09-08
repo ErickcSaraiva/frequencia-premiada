@@ -29,7 +29,7 @@ O sistema possui uma arquitetura orientada a eventos baseada inteiramente em **T
 * **Axios** + **Socket.io-client**
 * Dark Theme (focado em redução de fadiga visual)
 
-### Mobile (App do Professor e App do Aluno)
+### Mobile (aplicativo único para professor e aluno)
 * **React Native** + **Expo**
 * **react-native-nfc-manager** (Leitura de Tags)
 * Design focado em "Chamada em 2 toques"
@@ -47,196 +47,50 @@ O sistema possui uma arquitetura orientada a eventos baseada inteiramente em **T
 - [ ] **Integração MEC/Censo Escolar:** Exportação padronizada de dados.
 
 ---
-## ⚙️ Como executar o projeto localmente
+## 📱 Como acessar o sistema
 
-### Pré-requisitos
+O EduPoints possui serviços publicados para demonstração e um aplicativo
+Android instalável.
 
-- Git;
-- Docker Engine;
-- Docker Compose;
-- Node.js 20 para executar dashboard e mobile.
+### Dashboard web
 
-Não é necessário instalar PostgreSQL diretamente no computador quando o ambiente Docker for utilizado.
+O painel web está disponível em:
 
-### 1. Clonar o repositório
+- [Acessar o dashboard do EduPoints](https://frequencia-premiada.vercel.app)
 
-```bash
-git clone https://github.com/Uninorte-Extensao/frequencia-premiada.git
-cd frequencia-premiada
-```
+### Aplicativo Android
 
-### 2. Preparar as variáveis de ambiente
+O aplicativo Android é distribuído como APK para testes em dispositivos
+físicos:
 
-Copie os arquivos de exemplo:
+- [Baixar APK de testes — versão 1.0.0, build 2](https://expo.dev/artifacts/eas/KLlgSwfCu1FZsnx6XS2Bg3qrVGe1nAJGiE36MxQhjEo.apk)
 
-```bash
-cp .env.example .env
-cp dashboard/.env.example dashboard/.env
-cp mobile/.env.example mobile/.env
-```
+Para instalar:
 
-Os arquivos `.env` reais são ignorados pelo Git. Nunca versione senhas, tokens ou credenciais reais.
+1. Acesse o link pelo dispositivo Android.
+2. Baixe o arquivo APK.
+3. Autorize temporariamente a instalação pelo navegador ou gerenciador de arquivos.
+4. Instale ou atualize o EduPoints.
+5. Abra o aplicativo e realize a autenticação.
 
-Convenção adotada:
+Baixe o aplicativo somente pelos links oficiais deste projeto. As versões
+homologadas futuramente serão disponibilizadas na página de Releases do GitHub.
 
-| Aplicação | Variável | Finalidade |
-|---|---|---|
-| Backend | `DATABASE_URL` | Conexão com o PostgreSQL |
-| Backend | `JWT_SECRET` | Assinatura dos tokens de autenticação |
-| Backend | `PORT` | Porta HTTP da API |
-| Backend | `CORS_ORIGINS` | Origens permitidas, separadas por vírgula |
-| Dashboard | `VITE_API_URL` | URL pública do backend |
-| Mobile | `EXPO_PUBLIC_API_URL` | URL do backend acessível pelo dispositivo |
+### API
 
-### 3. Subir PostgreSQL e backend
+A disponibilidade da API pode ser consultada pelo endpoint:
 
-Na raiz do projeto, execute:
+- [Verificar estado da API](https://frequencia-premiada-api.onrender.com/health)
 
-```bash
-docker compose up --build -d
-```
+Em hospedagens gratuitas, a primeira resposta pode demorar alguns segundos
+enquanto o serviço é inicializado.
 
-Esse comando:
+## 🧑‍💻 Desenvolvimento local
 
-- cria o PostgreSQL em uma rede interna;
-- aguarda o banco ficar saudável;
-- constrói o backend;
-- executa `prisma migrate deploy`;
-- disponibiliza a API em `http://localhost:3333`.
+As instruções para clonar, configurar e executar o sistema localmente foram
+separadas da documentação destinada aos usuários:
 
-Verifique os serviços:
-
-```bash
-docker compose ps
-```
-
-Teste a API:
-
-```bash
-curl http://localhost:3333/
-```
-
-### 4. Criar dados exclusivamente demonstrativos
-
-O seed não é executado automaticamente. Para criar as contas de demonstração:
-
-```bash
-docker compose exec backend npm run seed
-```
-
-Contas criadas:
-
-- Professor: `professor@escola.com` / `123456`
-- Aluno: `ALUNO001` / `123456`
-
-Essas credenciais são destinadas somente ao desenvolvimento e às demonstrações locais.
-
-### 5. Executar o dashboard
-
-Em outro terminal:
-
-```bash
-cd dashboard
-npm ci
-npm run dev
-```
-
-Por padrão, o dashboard utiliza:
-
-```dotenv
-VITE_API_URL=http://localhost:3333
-```
-
-Acesse `http://localhost:5173`.
-
-### 6. Executar o mobile
-
-Em outro terminal:
-
-```bash
-cd mobile
-npm ci
-npm start
-```
-
-Em emulador ou navegador local:
-
-```dotenv
-EXPO_PUBLIC_API_URL=http://localhost:3333
-```
-
-Em celular físico, substitua `localhost` pelo IP local do computador:
-
-```dotenv
-EXPO_PUBLIC_API_URL=http://192.168.x.x:3333
-```
-
-O celular e o computador devem estar conectados à mesma rede.
-
-### Comandos úteis
-
-Acompanhar os logs do backend:
-
-```bash
-docker compose logs -f backend
-```
-
-Parar os serviços preservando o banco:
-
-```bash
-docker compose down
-```
-
-Iniciar novamente:
-
-```bash
-docker compose up -d
-```
-
-As informações do PostgreSQL são preservadas no volume Docker `postgres_data`.
-
-## ✅ Verificações de qualidade
-
-O workflow `.github/workflows/quality.yml` é executado em todo Pull Request direcionado à `main`. Ele cria três checks independentes e usa somente valores temporários no ambiente de CI; nenhum segredo do projeto é versionado.
-
-Antes de abrir um Pull Request, reproduza localmente as mesmas verificações.
-
-### Backend
-
-O banco configurado em `backend/.env` deve estar acessível e preparado com as migrações e o seed de teste.
-
-```bash
-cd backend
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run seed
-npm run build
-npm test
-```
-
-### Dashboard
-
-```bash
-cd dashboard
-npm ci
-npm run lint
-npm run build
-```
-
-### Mobile
-
-```bash
-cd mobile
-npm ci
-npm run typecheck
-```
-
-Todos os três checks precisam ficar verdes antes do merge. Depois que o workflow rodar pelo menos uma vez, um administrador deve configurar a proteção da branch `main` e marcar estes checks como obrigatórios:
-
-- `backend-checks`
-- `dashboard-checks`
-- `mobile-checks`
+- [Consultar o guia de desenvolvimento](docs/DEVELOPMENT.md)
 
 ## 🌐 Publicação
 
