@@ -36,6 +36,11 @@ router.get('/tag/:nfc_uid', autenticar, buscarAlunoPorTag)
 router.get('/ranking/:turmaId', autenticar, rankingPorTurma)
 
 // "Batismo" da Tag - Associa a tag física a um aluno já matriculado
-router.patch('/vincular-nfc', autenticar, vincularNfc)
+router.patch(
+  '/vincular-nfc',
+  autenticar,
+  autorizarRole(['professor']),
+  vincularNfc,
+)
 
 export default router
