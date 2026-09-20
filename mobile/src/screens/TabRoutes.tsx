@@ -73,7 +73,7 @@ export default function TabRoutes() {
       screenOptions={{ headerShown: false }} // Esconde o cabeçalho padrão
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Início' }} />
-      <Tab.Screen name="Presencas" component={PresencasScreen} options={{ tabBarLabel: 'Presença' }} />
+      <Tab.Screen name="Presencas" component={PresencasScreen} options={{ tabBarLabel: 'Histórico' }} />
       <Tab.Screen name="Relatorios" component={RelatoriosScreen} options={{ tabBarLabel: 'Relatórios' }} />
       <Tab.Screen name="Perfil" component={PerfilScreen} options={{ tabBarLabel: 'Perfil' }} />
     </Tab.Navigator>

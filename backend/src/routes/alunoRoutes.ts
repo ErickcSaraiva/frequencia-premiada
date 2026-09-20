@@ -8,6 +8,8 @@ import {
   vincularNfc 
 } from '../controllers/alunoController'
 import { autenticar } from '../middlewares/authMiddleware'
+import { autorizarRole } from '../middlewares/authMiddleware'
+import { listarMeuHistorico } from '../controllers/historicoAlunoController'
 
 const router = Router()
 
@@ -16,6 +18,10 @@ const router = Router()
 router.post('/login', loginAluno)
 
 // 2. ROTAS PROTEGIDAS (Exigem Token de autenticação)
+
+// O ID vem do JWT. A rota não aceita alunoId por URL ou query string, evitando
+// que um estudante tente consultar o histórico de outro.
+router.get('/me/presencas', autenticar, autorizarRole(['aluno']), listarMeuHistorico)
 
 // Cadastro inicial do aluno (via painel web do professor/admin)
 router.post('/', autenticar, cadastrarAluno)

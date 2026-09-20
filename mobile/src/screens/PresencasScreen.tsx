@@ -1,649 +1,487 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
-  TouchableOpacity,
-  ScrollView,
+  RefreshControl,
   SafeAreaView,
-  TextInput,
-  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native'
-import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect } from '@react-navigation/native'
+import axios from 'axios'
 import { API_URL } from '../config/api'
 
 type StatusPresenca = 'presente' | 'falta' | 'justificada'
+type FiltroStatus = 'todos' | StatusPresenca
+type Periodo = '7' | '30' | '90' | 'todos'
 
 type Presenca = {
-  id: number | string
+  id: string
   status: StatusPresenca
   data: string
-  aluno?: {
-    nome?: string
-    matricula?: string
-    curso?: string
+  turma: {
+    id: string
+    nome: string
+    disciplina: { id: string; nome: string } | null
   }
 }
 
-type Filtro = 'todos' | StatusPresenca
+type Resumo = {
+  total: number
+  presentes: number
+  faltas: number
+  justificadas: number
+  percentualFrequencia: number
+}
 
-const demoPresencas: Presenca[] = [
-  {
-    id: '1',
-    status: 'presente',
-    data: '2026-05-13T08:04:00',
-    aluno: {
-      nome: 'Gabriel Ferreira',
-      matricula: '2024-0012',
-      curso: 'Engenharia de Software',
-    },
-  },
-  {
-    id: '2',
-    status: 'presente',
-    data: '2026-05-13T08:04:00',
-    aluno: {
-      nome: 'Mariana Lima',
-      matricula: '2024-0842',
-      curso: 'Ciência de Dados',
-    },
-  },
-  {
-    id: '3',
-    status: 'falta',
-    data: '2026-05-13T08:04:00',
-    aluno: {
-      nome: 'Roberto Souza',
-      matricula: '2024-0155',
-      curso: 'Inteligência Artificial',
-    },
-  },
-  {
-    id: '4',
-    status: 'justificada',
-    data: '2026-05-13T08:04:00',
-    aluno: {
-      nome: 'Ana Clara Costa',
-      matricula: '2024-1002',
-      curso: 'Sistemas de Informação',
-    },
-  },
+type HistoricoResponse = {
+  periodo: {
+    valor: Periodo
+    inicio: string | null
+    fim: string
+    fusoHorario: string
+  }
+  resumo: Resumo
+  presencas: Presenca[]
+}
+
+type EstadoErro = { titulo: string; mensagem: string } | null
+
+const resumoVazio: Resumo = {
+  total: 0,
+  presentes: 0,
+  faltas: 0,
+  justificadas: 0,
+  percentualFrequencia: 0,
+}
+
+const periodos: Array<{ id: Periodo; label: string }> = [
+  { id: '7', label: '7 dias' },
+  { id: '30', label: '30 dias' },
+  { id: '90', label: '90 dias' },
+  { id: 'todos', label: 'Todo o histórico' },
 ]
 
-function iniciais(nome: string) {
-  return nome
-    .split(' ')
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
+const rotulosStatus: Record<StatusPresenca, string> = {
+  presente: 'Presente',
+  falta: 'Falta',
+  justificada: 'Justificada',
 }
 
-function corAvatar(index: number) {
-  const cores = ['#4038d1', '#6b3d16', '#272a31', '#2f855a']
-  return cores[index % cores.length]
-}
-
-export default function PresencasScreen({ navigation }: any) {
-  const [presencas, setPresencas] = useState<Presenca[]>(demoPresencas)
+export default function PresencasScreen() {
+  const [presencas, setPresencas] = useState<Presenca[]>([])
+  const [resumo, setResumo] = useState<Resumo>(resumoVazio)
+  const [fusoHorario, setFusoHorario] = useState('America/Manaus')
+  const [periodo, setPeriodo] = useState<Periodo>('30')
+  const [status, setStatus] = useState<FiltroStatus>('todos')
   const [carregando, setCarregando] = useState(true)
-  const [filtro, setFiltro] = useState<Filtro>('todos')
-  const [busca, setBusca] = useState('')
-  const [selecionado, setSelecionado] = useState<string | number | null>(null)
+  const [atualizando, setAtualizando] = useState(false)
+  const [erro, setErro] = useState<EstadoErro>(null)
+
+  const carregarHistorico = useCallback(
+    async (modoAtualizacao = false) => {
+      modoAtualizacao ? setAtualizando(true) : setCarregando(true)
+      setErro(null)
+
+      if (!modoAtualizacao) {
+        setPresencas([])
+        setResumo(resumoVazio)
+      }
+
+      try {
+        const token = await AsyncStorage.getItem('token')
+
+        if (!token) {
+          setPresencas([])
+          setResumo(resumoVazio)
+          setErro({
+            titulo: 'Sessão encerrada',
+            mensagem: 'Entre novamente para consultar seu histórico.',
+          })
+          return
+        }
+
+        const response = await axios.get<HistoricoResponse>(
+          `${API_URL}/alunos/me/presencas`,
+          {
+            params: { periodo },
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000,
+          },
+        )
+
+        // A API é a única fonte da tela: resposta vazia permanece vazia.
+        setPresencas(response.data.presencas ?? [])
+        setResumo(response.data.resumo ?? resumoVazio)
+        setFusoHorario(response.data.periodo?.fusoHorario ?? 'America/Manaus')
+      } catch (falha) {
+        setPresencas([])
+        setResumo(resumoVazio)
+
+        if (axios.isAxiosError(falha) && falha.response?.status === 401) {
+          setErro({
+            titulo: 'Sessão expirada',
+            mensagem: 'Entre novamente para proteger os seus dados.',
+          })
+        } else if (axios.isAxiosError(falha) && !falha.response) {
+          setErro({
+            titulo: 'Sem conexão',
+            mensagem: 'Confira sua internet e tente novamente.',
+          })
+        } else {
+          setErro({
+            titulo: 'Não foi possível carregar',
+            mensagem:
+              'O histórico está indisponível no momento. Nenhum dado demonstrativo foi exibido.',
+          })
+        }
+      } finally {
+        setCarregando(false)
+        setAtualizando(false)
+      }
+    },
+    [periodo],
+  )
 
   useFocusEffect(
     useCallback(() => {
-      carregarPresencas()
-    }, []),
+      carregarHistorico()
+    }, [carregarHistorico]),
   )
 
-  const carregarPresencas = async () => {
-    setCarregando(true)
+  const contadores = useMemo(
+    () => ({
+      todos: presencas.length,
+      presente: presencas.filter((item) => item.status === 'presente').length,
+      falta: presencas.filter((item) => item.status === 'falta').length,
+      justificada: presencas.filter((item) => item.status === 'justificada').length,
+    }),
+    [presencas],
+  )
 
-    try {
-      const token = await AsyncStorage.getItem('token')
+  const presencasFiltradas = useMemo(
+    () =>
+      status === 'todos'
+        ? presencas
+        : presencas.filter((item) => item.status === status),
+    [presencas, status],
+  )
 
-      const response = await axios.get(`${API_URL}/checkin`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+  const formatarData = (data: string) =>
+    new Intl.DateTimeFormat('pt-BR', {
+      timeZone: fusoHorario,
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(data))
 
-      if (response.data?.length) {
-        setPresencas(response.data)
-      } else {
-        setPresencas(demoPresencas)
-      }
-    } catch (error) {
-      console.error('Erro ao buscar presenças:', error)
-      setPresencas(demoPresencas)
-    } finally {
-      setCarregando(false)
-    }
-  }
+  const formatarHora = (data: string) =>
+    new Intl.DateTimeFormat('pt-BR', {
+      timeZone: fusoHorario,
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(data))
 
-  const contadores = useMemo(() => {
-    const total = presencas.length
-
-    const presentes = presencas.filter(
-      (item) => item.status === 'presente',
-    ).length
-
-    const faltas = presencas.filter(
-      (item) => item.status === 'falta',
-    ).length
-
-    const justificadas = presencas.filter(
-      (item) => item.status === 'justificada',
-    ).length
-
-    return {
-      total,
-      presentes,
-      faltas,
-      justificadas,
-    }
-  }, [presencas])
-
-  const presencasFiltradas = useMemo(() => {
-    let lista = presencas
-
-    if (filtro !== 'todos') {
-      lista = lista.filter((item) => item.status === filtro)
-    }
-
-    if (busca.trim()) {
-      lista = lista.filter((item) => {
-        const nome = item.aluno?.nome || ''
-        const matricula = item.aluno?.matricula || ''
-
-        return `${nome} ${matricula}`
-          .toLowerCase()
-          .includes(busca.toLowerCase())
-      })
-    }
-
-    return lista
-  }, [presencas, filtro, busca])
-
-  const presencaGeral = contadores.total
-    ? Math.round(
-        ((contadores.presentes + contadores.justificadas) /
-          contadores.total) *
-          100,
-      )
-    : 0
-
-  const filtros: Array<{ id: Filtro; label: string }> = [
-    {
-      id: 'todos',
-      label: `Todos (${contadores.total})`,
-    },
-    {
-      id: 'presente',
-      label: `Presentes (${contadores.presentes})`,
-    },
-    {
-      id: 'falta',
-      label: `Faltas (${contadores.faltas})`,
-    },
-    {
-      id: 'justificada',
-      label: `Justificadas (${contadores.justificadas})`,
-    },
+  const filtrosStatus: Array<{ id: FiltroStatus; label: string }> = [
+    { id: 'todos', label: `Todos (${contadores.todos})` },
+    { id: 'presente', label: `Presentes (${contadores.presente})` },
+    { id: 'falta', label: `Faltas (${contadores.falta})` },
+    { id: 'justificada', label: `Justificadas (${contadores.justificada})` },
   ]
-
-  const renderStatus = (status: StatusPresenca) => {
-    const label =
-      status === 'presente'
-        ? 'Presente'
-        : status === 'falta'
-        ? 'Falta'
-        : 'Justificada'
-
-    const style =
-      status === 'presente'
-        ? styles.statusPresente
-        : status === 'falta'
-        ? styles.statusFalta
-        : styles.statusJustificada
-
-    return (
-      <View style={[styles.statusChip, style]}>
-        <Text style={styles.statusText}>{label}</Text>
-      </View>
-    )
-  }
-
-  const confirmarPresencaManual = () => {
-    if (!selecionado) {
-      Alert.alert('Atenção', 'Selecione um aluno.')
-      return
-    }
-
-    Alert.alert(
-      'Sucesso',
-      'Presença manual registrada com sucesso!',
-    )
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topbar}>
-        <TouchableOpacity
-          style={styles.topbarIcon}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.topbarIconText}>☰</Text>
-        </TouchableOpacity>
-
         <Text style={styles.brand}>EduPoints</Text>
-
-        <TouchableOpacity
-          style={styles.topbarIcon}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.topbarIconText}>◎</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={atualizando}
+            onRefresh={() => carregarHistorico(true)}
+            tintColor={colors.primary}
+          />
+        }
       >
-        <View style={styles.classHeader}>
-          <Text style={styles.classTitle}>
-            Presença Manual
-          </Text>
+        <Text style={styles.title}>Meu histórico</Text>
+        <Text style={styles.subtitle}>
+          Acompanhe suas presenças, faltas e justificativas.
+        </Text>
 
-          <Text style={styles.classSubtitle}>
-            Gerencie a frequência dos alunos
-          </Text>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>
-            Presença Geral
-          </Text>
-
-          <Text style={styles.summaryValue}>
-            {presencaGeral}%
-          </Text>
-
-          <Text style={styles.summaryTrend}>
-            ↗ +2% vs última aula
-          </Text>
-        </View>
-
-        <TextInput
-          style={styles.search}
-          placeholder="Buscar aluno por nome ou matrícula..."
-          placeholderTextColor="#5E6883"
-          value={busca}
-          onChangeText={setBusca}
+        <Text style={styles.sectionLabel}>Período</Text>
+        <FiltroHorizontal
+          itens={periodos}
+          selecionado={periodo}
+          aoSelecionar={(id) => setPeriodo(id as Periodo)}
         />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-          style={styles.filterScroll}
-        >
-          {filtros.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.filterButton,
-                filtro === item.id &&
-                  styles.filterButtonActive,
-              ]}
-              onPress={() => setFiltro(item.id)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  filtro === item.id &&
-                    styles.filterTextActive,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Frequência no período</Text>
+          <Text style={styles.summaryValue}>{resumo.percentualFrequencia}%</Text>
+          <Text style={styles.summaryRule}>
+            Presenças e faltas justificadas contam como frequência.
+          </Text>
+
+          <View style={styles.summaryGrid}>
+            <ResumoItem label="Aulas" valor={resumo.total} />
+            <ResumoItem label="Presenças" valor={resumo.presentes} />
+            <ResumoItem label="Faltas" valor={resumo.faltas} />
+            <ResumoItem label="Justificadas" valor={resumo.justificadas} />
+          </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>Status</Text>
+        <FiltroHorizontal
+          itens={filtrosStatus}
+          selecionado={status}
+          aoSelecionar={(id) => setStatus(id as FiltroStatus)}
+        />
 
         {carregando ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator
-              size="large"
-              color={colors.primaryContainer}
-            />
-          </View>
+          <EstadoCentral>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.stateMessage}>Carregando seu histórico...</Text>
+          </EstadoCentral>
+        ) : erro ? (
+          <EstadoCentral>
+            <Text style={styles.stateTitle}>{erro.titulo}</Text>
+            <Text style={styles.stateMessage}>{erro.mensagem}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => carregarHistorico()}
+            >
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </EstadoCentral>
+        ) : presencas.length === 0 ? (
+          <EstadoCentral>
+            <Text style={styles.stateTitle}>Nenhum registro no período</Text>
+            <Text style={styles.stateMessage}>
+              Quando uma chamada for registrada, ela aparecerá aqui.
+            </Text>
+          </EstadoCentral>
+        ) : presencasFiltradas.length === 0 ? (
+          <EstadoCentral>
+            <Text style={styles.stateTitle}>Nenhum resultado</Text>
+            <Text style={styles.stateMessage}>
+              Não há registros com o status selecionado neste período.
+            </Text>
+          </EstadoCentral>
         ) : (
-          presencasFiltradas.map((item, index) => {
-            const nome =
-              item.aluno?.nome || 'Aluno Desconhecido'
-
-            const matricula =
-              item.aluno?.matricula || 'Sem matrícula'
-
-            const curso =
-              item.aluno?.curso || 'Curso não informado'
-
-            return (
-              <TouchableOpacity
-                key={String(item.id)}
-                style={[
-                  styles.card,
-                  selecionado === item.id &&
-                    styles.selected,
-                ]}
-                onPress={() => setSelecionado(item.id)}
-              >
-                <View
-                  style={[
-                    styles.avatar,
-                    {
-                      backgroundColor:
-                        corAvatar(index),
-                    },
-                  ]}
-                >
-                  <Text style={styles.avatarText}>
-                    {iniciais(nome)}
-                  </Text>
-                </View>
-
-                <View style={styles.cardInfo}>
-                  <Text style={styles.nome}>
-                    {nome}
-                  </Text>
-
-                  <Text style={styles.curso}>
-                    {curso}
-                  </Text>
-
-                  <Text style={styles.freq}>
-                    Matrícula: {matricula}
-                  </Text>
-                </View>
-
-                <View>
-                  <Text style={styles.badge}>
-                    {matricula}
-                  </Text>
-
-                  <View style={{ marginTop: 10 }}>
-                    {renderStatus(item.status)}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )
-          })
+          presencasFiltradas.map((item) => (
+            <View key={item.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.disciplina}>
+                  {item.turma.disciplina?.nome ?? item.turma.nome}
+                </Text>
+                <StatusChip status={item.status} />
+              </View>
+              {item.turma.disciplina ? (
+                <Text style={styles.turma}>{item.turma.nome}</Text>
+              ) : null}
+              <Text style={styles.date}>{formatarData(item.data)}</Text>
+              <Text style={styles.time}>
+                {formatarHora(item.data)} · horário de Manaus
+              </Text>
+            </View>
+          ))
         )}
-
-        <TouchableOpacity
-          style={styles.confirm}
-          onPress={confirmarPresencaManual}
-        >
-          <Text style={styles.confirmText}>
-            Confirmar Presença
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('Checkin')}
-      >
-        <Text style={styles.fabIcon}>▣</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   )
 }
 
+function FiltroHorizontal({
+  itens,
+  selecionado,
+  aoSelecionar,
+}: {
+  itens: Array<{ id: string; label: string }>
+  selecionado: string
+  aoSelecionar: (id: string) => void
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterContent}
+      style={styles.filterScroll}
+    >
+      {itens.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          style={[
+            styles.filterButton,
+            selecionado === item.id && styles.filterButtonActive,
+          ]}
+          onPress={() => aoSelecionar(item.id)}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              selecionado === item.id && styles.filterTextActive,
+            ]}
+          >
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  )
+}
+
+function ResumoItem({ label, valor }: { label: string; valor: number }) {
+  return (
+    <View style={styles.summaryItem}>
+      <Text style={styles.summaryItemValue}>{valor}</Text>
+      <Text style={styles.summaryItemLabel}>{label}</Text>
+    </View>
+  )
+}
+
+function StatusChip({ status }: { status: StatusPresenca }) {
+  const estiloStatus =
+    status === 'presente'
+      ? styles.statusPresente
+      : status === 'falta'
+        ? styles.statusFalta
+        : styles.statusJustificada
+
+  return (
+    <View style={[styles.statusChip, estiloStatus]}>
+      <Text style={styles.statusText}>{rotulosStatus[status]}</Text>
+    </View>
+  )
+}
+
+function EstadoCentral({ children }: { children: React.ReactNode }) {
+  return <View style={styles.stateContainer}>{children}</View>
+}
+
 const colors = {
-  background: '#10131a',
-  surface: '#1d2027',
-  surfaceLow: '#191b23',
-  surfaceHigh: '#272a31',
-  primary: '#adc6ff',
-  primaryContainer: '#4d8eff',
-  onPrimaryContainer: '#00285d',
-  onSurface: '#e1e2ec',
-  onSurfaceVariant: '#c2c6d6',
-  outlineVariant: '#424754',
-  success: '#4ade80',
-  error: '#ffb4ab',
-  tertiary: '#ffb786',
+  background: '#060D1E',
+  surface: '#11182F',
+  surfaceHigh: '#1B2642',
+  primary: '#B6CBFF',
+  primaryContainer: '#5A95FF',
+  onPrimaryContainer: '#03163E',
+  onSurface: '#E4E9F5',
+  onSurfaceVariant: '#AAB2C5',
+  outline: '#2D3959',
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   topbar: {
-    height: 64,
+    minHeight: 64,
+    justifyContent: 'center',
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: colors.outlineVariant,
-    backgroundColor: '#171a22',
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderBottomColor: colors.outline,
+    backgroundColor: '#0C1428',
   },
-  topbarIcon: {
-    width: 34,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topbarIconText: {
-    color: colors.primary,
-    fontSize: 30,
-    fontWeight: '700',
-  },
-  brand: {
-    flex: 1,
-    color: colors.primary,
-    fontSize: 32,
-    fontWeight: '900',
-    marginLeft: 12,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 140,
-  },
-  classHeader: {
-    marginBottom: 28,
-  },
-  classTitle: {
-    color: colors.onSurface,
-    fontSize: 38,
-    fontWeight: '900',
-  },
-  classSubtitle: {
+  brand: { color: colors.primary, fontSize: 30, fontWeight: '900' },
+  scroll: { flex: 1 },
+  content: { padding: 20, paddingBottom: 48 },
+  title: { color: colors.onSurface, fontSize: 34, fontWeight: '900' },
+  subtitle: {
     color: colors.onSurfaceVariant,
-    fontSize: 20,
-    marginTop: 8,
-  },
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.outlineVariant,
-    padding: 24,
+    fontSize: 17,
+    lineHeight: 24,
+    marginTop: 6,
     marginBottom: 24,
   },
-  summaryLabel: {
-    color: colors.onSurfaceVariant,
+  sectionLabel: {
+    color: colors.onSurface,
     fontSize: 16,
     fontWeight: '800',
+    marginBottom: 10,
   },
-  summaryValue: {
-    color: colors.primary,
-    fontSize: 54,
-    fontWeight: '900',
-    marginTop: 8,
-  },
-  summaryTrend: {
-    color: colors.success,
-    marginTop: 6,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  search: {
-    backgroundColor: '#0F172C',
-    borderWidth: 1,
-    borderColor: '#293655',
-    borderRadius: 14,
-    color: '#C9D4F8',
-    padding: 14,
-    fontSize: 18,
-    marginBottom: 18,
-  },
-  filterScroll: {
-    marginBottom: 24,
-  },
-  filterContent: {
-    gap: 12,
-    paddingRight: 20,
-  },
+  filterScroll: { marginBottom: 22 },
+  filterContent: { gap: 10, paddingRight: 20 },
   filterButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
     borderRadius: 999,
     backgroundColor: colors.surfaceHigh,
     borderWidth: 1,
-    borderColor: colors.outlineVariant,
+    borderColor: colors.outline,
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  filterText: {
-    color: colors.onSurfaceVariant,
-    fontWeight: '700',
+  filterText: { color: colors.onSurfaceVariant, fontWeight: '700' },
+  filterTextActive: { color: colors.onPrimaryContainer },
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.outline,
+    padding: 20,
+    marginBottom: 24,
   },
-  filterTextActive: {
-    color: colors.onPrimaryContainer,
+  summaryLabel: { color: colors.onSurfaceVariant, fontSize: 16, fontWeight: '700' },
+  summaryValue: { color: colors.primary, fontSize: 52, fontWeight: '900', marginTop: 4 },
+  summaryRule: { color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 18 },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  summaryItem: {
+    width: '47%',
+    borderRadius: 14,
+    backgroundColor: colors.surfaceHigh,
+    padding: 14,
   },
-  loadingContainer: {
-    paddingVertical: 60,
-  },
+  summaryItemValue: { color: colors.onSurface, fontSize: 24, fontWeight: '900' },
+  summaryItemLabel: { color: colors.onSurfaceVariant, marginTop: 2 },
   card: {
-    backgroundColor: '#111A31',
-    borderWidth: 1,
-    borderColor: '#263453',
+    backgroundColor: colors.surface,
     borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  selected: {
-    borderWidth: 2,
-    borderColor: '#9CBEFF',
-  },
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 18,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  nome: {
-    color: '#DEE5FB',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  curso: {
-    color: '#B0B9D3',
-    fontSize: 16,
-    marginTop: 4,
-  },
-  freq: {
-    color: '#A7B6DB',
-    fontSize: 14,
-    marginTop: 6,
-  },
-  badge: {
-    color: '#AFC2F3',
-    backgroundColor: '#273A63',
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  confirm: {
-    backgroundColor: '#9BC0FF',
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 18,
-  },
-  confirmText: {
-    color: '#0B2159',
-    fontWeight: '900',
-    fontSize: 22,
-  },
-  statusChip: {
-    borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderColor: colors.outline,
+    padding: 18,
+    marginBottom: 12,
   },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  statusPresente: {
-    backgroundColor: 'rgba(74,222,128,0.14)',
-    borderColor: 'rgba(74,222,128,0.24)',
-  },
-  statusFalta: {
-    backgroundColor: 'rgba(255,180,171,0.14)',
-    borderColor: 'rgba(255,180,171,0.28)',
-  },
-  statusJustificada: {
-    backgroundColor: 'rgba(173,198,255,0.14)',
-    borderColor: 'rgba(173,198,255,0.28)',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: colors.primaryContainer,
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  disciplina: { flex: 1, color: colors.onSurface, fontSize: 18, fontWeight: '800' },
+  turma: { color: colors.onSurfaceVariant, marginTop: 5 },
+  date: { color: colors.onSurface, textTransform: 'capitalize', marginTop: 16 },
+  time: { color: colors.onSurfaceVariant, marginTop: 4 },
+  statusChip: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999 },
+  statusPresente: { backgroundColor: '#174D37' },
+  statusFalta: { backgroundColor: '#662E35' },
+  statusJustificada: { backgroundColor: '#5A431F' },
+  statusText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  stateContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.outline,
+    padding: 28,
+    minHeight: 190,
   },
-  fabIcon: {
-    color: colors.onPrimaryContainer,
-    fontSize: 32,
-    fontWeight: '900',
+  stateTitle: { color: colors.onSurface, fontSize: 20, fontWeight: '900', textAlign: 'center' },
+  stateMessage: {
+    color: colors.onSurfaceVariant,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 10,
   },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: colors.primaryContainer,
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  retryText: { color: colors.onPrimaryContainer, fontWeight: '900' },
 })
