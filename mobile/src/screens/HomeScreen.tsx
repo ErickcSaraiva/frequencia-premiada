@@ -47,6 +47,15 @@ export default function HomeScreen({ navigation }: any) {
             </Text>
           </TouchableOpacity>
 
+	<TouchableOpacity
+  style={styles.card}
+  onPress={() => navigation.navigate('CadastroNfc')}
+>
+  <Text style={styles.cardTitle}>Cadastrar tag NFC</Text>
+  <Text style={styles.cardText}>
+    Vincule uma tag física a um aluno da turma.
+  </Text>
+</TouchableOpacity>
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('Relatorios')}

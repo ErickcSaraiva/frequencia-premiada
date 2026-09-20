@@ -11,11 +11,13 @@ import { SessionProvider, useSession } from './src/contexts/SessionContext'
 import LoginScreen from './src/screens/LoginScreen'
 import CheckinScreen from './src/screens/CheckinScreen'
 import TabRoutes from './src/screens/TabRoutes'
+import CadastroNfcScreen from './src/screens/CadastroNfcScreen'
 
 export type RootStackParamList = {
   Login: undefined
   MainTabs: undefined
   Checkin: undefined
+  CadastroNfc: undefined
 }
 
 const Stack = createStackNavigator<RootStackParamList>()
@@ -42,11 +44,18 @@ function RootNavigator() {
             />
 
             {session.role === 'professor' && (
-              <Stack.Screen
-                name="Checkin"
-                component={CheckinScreen as ComponentType<any>}
-              />
-            )}
+  <>
+    <Stack.Screen
+      name="Checkin"
+      component={CheckinScreen as ComponentType<any>}
+    />
+
+    <Stack.Screen
+      name="CadastroNfc"
+      component={CadastroNfcScreen as ComponentType<any>}
+    />
+  </>
+)}
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
