@@ -15,7 +15,12 @@ const router = Router()
 
 // 1. ROTA PÚBLICA: Login do Aluno no App Mobile
 // Não usa o middleware 'autenticar' porque o aluno ainda não tem o Token JWT
-router.post('/login', loginAluno)
+router.post(
+  '/',
+  autenticar,
+  autorizarRole(['professor']),
+  cadastrarAluno,
+)
 
 // 2. ROTAS PROTEGIDAS (Exigem Token de autenticação)
 
@@ -27,10 +32,20 @@ router.get('/me/presencas', autenticar, autorizarRole(['aluno']), listarMeuHisto
 router.post('/', autenticar, cadastrarAluno)
 
 // Listagem da turma (para o app/painel do professor)
-router.get('/turma/:turmaId', autenticar, listarAlunosPorTurma)
+router.get(
+  '/turma/:turmaId',
+  autenticar,
+  autorizarRole(['professor']),
+  listarAlunosPorTurma,
+)
 
 // O "Bip" da tag NFC
-router.get('/tag/:nfc_uid', autenticar, buscarAlunoPorTag)
+router.get(
+  '/tag/:nfc_uid',
+  autenticar,
+  autorizarRole(['professor']),
+  buscarAlunoPorTag,
+)
 
 // Gamificação - Ranking público da turma
 router.get('/ranking/:turmaId', autenticar, rankingPorTurma)
