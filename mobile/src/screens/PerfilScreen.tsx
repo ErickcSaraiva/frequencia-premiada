@@ -1,21 +1,29 @@
 import React from 'react'
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 
-export default function PerfilScreen({ navigation }: any) {
-  
-  const fazerLogout = async () => {
-    await AsyncStorage.multiRemove(['token', 'professor'])
-    // Reseta a navegação e joga de volta pra tela de Login
-    navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+import { useSession } from '../contexts/SessionContext'
+
+export default function PerfilScreen() {
+  const { session, signOut } = useSession()
+
+  if (!session) {
+    return null
   }
+
+  const isProfessor = session.role === 'professor'
+  const identifier = isProfessor
+    ? session.user.email
+    : session.user.matricula
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topbar}>
-        <TouchableOpacity style={styles.topbarIcon} onPress={() => navigation.goBack()}>
-          <Text style={styles.topbarIconText}>☰</Text>
-        </TouchableOpacity>
         <Text style={styles.brand}>EduPoints</Text>
       </View>
 
@@ -23,11 +31,26 @@ export default function PerfilScreen({ navigation }: any) {
         <View style={styles.avatar}>
           <Text style={styles.avatarIcon}>♙</Text>
         </View>
-        <Text style={styles.title}>Meu Perfil</Text>
-        <Text style={styles.subtitle}>Configurações da sua conta.</Text>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={fazerLogout}>
-          <Text style={styles.logoutText}>Sair do Aplicativo</Text>
+        <Text style={styles.title}>{session.user.nome}</Text>
+
+        <Text style={styles.role}>
+          {isProfessor ? 'Professor' : 'Aluno'}
+        </Text>
+
+        {identifier && (
+          <Text style={styles.identifier}>{identifier}</Text>
+        )}
+
+        <Text style={styles.subtitle}>
+          Configurações da sua conta.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={signOut}
+        >
+          <Text style={styles.logoutText}>Sair do aplicativo</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -54,26 +77,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.outlineVariant,
     backgroundColor: '#171a22',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  topbarIcon: {
-    width: 34,
-    height: 40,
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  topbarIconText: {
-    color: colors.primary,
-    fontSize: 30,
-    fontWeight: '700',
-  },
   brand: {
-    flex: 1,
     color: colors.primary,
     fontSize: 32,
     fontWeight: '900',
-    marginLeft: 12,
   },
   content: {
     flex: 1,
@@ -98,7 +107,19 @@ const styles = StyleSheet.create({
     color: colors.onSurface,
     fontSize: 32,
     fontWeight: '900',
+    textAlign: 'center',
     marginBottom: 8,
+  },
+  role: {
+    color: colors.primary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  identifier: {
+    color: colors.onSurfaceVariant,
+    fontSize: 16,
+    marginBottom: 24,
   },
   subtitle: {
     color: colors.onSurfaceVariant,

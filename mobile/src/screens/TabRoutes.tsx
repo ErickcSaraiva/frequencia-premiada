@@ -7,6 +7,7 @@ import HomeScreen from './HomeScreen';
 import PresencasScreen from './PresencasScreen';
 import RelatoriosScreen from './RelatoriosScreen';
 import PerfilScreen from './PerfilScreen';
+import { useSession } from '../contexts/SessionContext'
 
 const Tab = createBottomTabNavigator();
 
@@ -67,17 +68,44 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabRoutes() {
+  const { session } = useSession()
+
+  if (!session) {
+    return null
+  }
+
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }} // Esconde o cabeçalho padrão
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Início' }} />
-      <Tab.Screen name="Presencas" component={PresencasScreen} options={{ tabBarLabel: 'Histórico' }} />
-      <Tab.Screen name="Relatorios" component={RelatoriosScreen} options={{ tabBarLabel: 'Relatórios' }} />
-      <Tab.Screen name="Perfil" component={PerfilScreen} options={{ tabBarLabel: 'Perfil' }} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: 'Início' }}
+      />
+
+      {session.role === 'aluno' ? (
+        <Tab.Screen
+          name="Presencas"
+          component={PresencasScreen}
+          options={{ tabBarLabel: 'Histórico' }}
+        />
+      ) : (
+        <Tab.Screen
+          name="Relatorios"
+          component={RelatoriosScreen}
+          options={{ tabBarLabel: 'Relatórios' }}
+        />
+      )}
+
+      <Tab.Screen
+        name="Perfil"
+        component={PerfilScreen}
+        options={{ tabBarLabel: 'Perfil' }}
+      />
     </Tab.Navigator>
-  );
+  )
 }
 
 // Seus estilos exatos da barra inferior
