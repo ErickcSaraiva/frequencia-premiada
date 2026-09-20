@@ -1,20 +1,33 @@
 import { Router } from 'express'
-import { 
-  cadastrarAluno, 
-  loginAluno,          
-  listarAlunosPorTurma, 
-  buscarAlunoPorTag, 
+
+import {
+  buscarAlunoPorTag,
+  cadastrarAluno,
+  listarAlunosPorTurma,
+  loginAluno,
   rankingPorTurma,
-  vincularNfc 
+  vincularNfc,
 } from '../controllers/alunoController'
-import { autenticar } from '../middlewares/authMiddleware'
-import { autorizarRole } from '../middlewares/authMiddleware'
 import { listarMeuHistorico } from '../controllers/historicoAlunoController'
+import {
+  autenticar,
+  autorizarRole,
+} from '../middlewares/authMiddleware'
 
 const router = Router()
 
-// 1. ROTA PÚBLICA: Login do Aluno no App Mobile
-// Não usa o middleware 'autenticar' porque o aluno ainda não tem o Token JWT
+// Login público: o aluno ainda não possui token JWT.
+router.post('/login', loginAluno)
+
+// Histórico pessoal: somente o próprio aluno autenticado.
+router.get(
+  '/me/presencas',
+  autenticar,
+  autorizarRole(['aluno']),
+  listarMeuHistorico,
+)
+
+// Cadastro administrativo de aluno: somente professor.
 router.post(
   '/',
   autenticar,
@@ -22,16 +35,7 @@ router.post(
   cadastrarAluno,
 )
 
-// 2. ROTAS PROTEGIDAS (Exigem Token de autenticação)
-
-// O ID vem do JWT. A rota não aceita alunoId por URL ou query string, evitando
-// que um estudante tente consultar o histórico de outro.
-router.get('/me/presencas', autenticar, autorizarRole(['aluno']), listarMeuHistorico)
-
-// Cadastro inicial do aluno (via painel web do professor/admin)
-router.post('/', autenticar, cadastrarAluno)
-
-// Listagem da turma (para o app/painel do professor)
+// Listagem dos alunos de uma turma: somente professor.
 router.get(
   '/turma/:turmaId',
   autenticar,
@@ -39,7 +43,7 @@ router.get(
   listarAlunosPorTurma,
 )
 
-// O "Bip" da tag NFC
+// Consulta de aluno por tag NFC ou matrícula: somente professor.
 router.get(
   '/tag/:nfc_uid',
   autenticar,
@@ -47,10 +51,14 @@ router.get(
   buscarAlunoPorTag,
 )
 
-// Gamificação - Ranking público da turma
-router.get('/ranking/:turmaId', autenticar, rankingPorTurma)
+// Ranking disponível para usuários autenticados.
+router.get(
+  '/ranking/:turmaId',
+  autenticar,
+  rankingPorTurma,
+)
 
-// "Batismo" da Tag - Associa a tag física a um aluno já matriculado
+// Vínculo de tag física com aluno: somente professor.
 router.patch(
   '/vincular-nfc',
   autenticar,
