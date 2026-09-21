@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native'
 import axios from 'axios'
 import NfcManager, { NfcTech } from 'react-native-nfc-manager'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
   AlunoResumo,
@@ -255,7 +255,10 @@ export default function CadastroNfcScreen({
   const busy = loading || reading || saving
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right', 'bottom']}
+    >
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}

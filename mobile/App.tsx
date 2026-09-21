@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { SessionProvider, useSession } from './src/contexts/SessionContext'
 import LoginScreen from './src/screens/LoginScreen'
@@ -67,9 +68,11 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <SessionProvider>
-      <RootNavigator />
-    </SessionProvider>
+    <SafeAreaProvider>
+      <SessionProvider>
+        <RootNavigator />
+      </SessionProvider>
+    </SafeAreaProvider>
   )
 }
 
