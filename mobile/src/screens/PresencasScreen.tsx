@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getSessionToken } from '../services/session'
 import { useFocusEffect } from '@react-navigation/native'
 import axios from 'axios'
 import { API_URL } from '../config/api'
@@ -92,7 +92,7 @@ export default function PresencasScreen() {
       }
 
       try {
-        const token = await AsyncStorage.getItem('token')
+        const token = await getSessionToken()
 
         if (!token) {
           setPresencas([])

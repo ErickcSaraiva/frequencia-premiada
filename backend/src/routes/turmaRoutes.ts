@@ -1,11 +1,26 @@
 import { Router } from 'express'
 import { cadastrarTurma, listarTurmas, rankingTurmas } from '../controllers/turmaController'
-import { autenticar } from '../middlewares/authMiddleware'
+import {
+  autenticar,
+  autorizarRole,
+} from '../middlewares/authMiddleware'
 
 const router = Router()
 
-router.post('/', autenticar, cadastrarTurma)
+router.post(
+  '/',
+  autenticar,
+  autorizarRole(['professor']),
+  cadastrarTurma,
+)
+
 router.get('/ranking', autenticar, rankingTurmas)
-router.get('/', autenticar, listarTurmas)
+
+router.get(
+  '/',
+  autenticar,
+  autorizarRole(['professor']),
+  listarTurmas,
+)
 
 export default router
