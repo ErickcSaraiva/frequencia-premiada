@@ -31,7 +31,9 @@ O sistema possui uma arquitetura orientada a eventos baseada inteiramente em **T
 
 ### Mobile (aplicativo único para professor e aluno)
 * **React Native** + **Expo**
-* **react-native-nfc-manager** (Leitura de Tags)
+* **react-native-nfc-manager** (Leitura e vínculo de tags NFC)
+* **react-native-safe-area-context** (Adaptação às áreas seguras do Android)
+* **Expo EAS Build** (Geração de APKs internos para testes)
 * Design focado em "Chamada em 2 toques"
 
 ---
@@ -63,7 +65,16 @@ O painel web está disponível em:
 O aplicativo Android é distribuído como APK para testes em dispositivos
 físicos:
 
-- [Baixar APK de testes — versão 1.0.0, build 2](https://expo.dev/artifacts/eas/KLlgSwfCu1FZsnx6XS2Bg3qrVGe1nAJGiE36MxQhjEo.apk)
+- [Baixar APK de testes — versão 1.0.0, build 4](https://expo.dev/accounts/ericksaraiva/projects/edupoints/builds/7db346e0-ba61-471a-bedc-af871a7951ad)
+
+#### Funcionalidades validadas no build 4
+
+* Login de aluno e professor no mesmo aplicativo, com navegação por perfil.
+* Aluno com acesso somente ao próprio histórico, pontos e perfil.
+* Professor autorizado a cadastrar tags NFC e registrar presença.
+* Vínculo persistente entre a tag física e o aluno.
+* Fluxo completo validado: leitura da tag, presença registrada e pontos atualizados.
+* Interface adaptada às áreas seguras e à navegação do Android.
 
 Para instalar:
 
