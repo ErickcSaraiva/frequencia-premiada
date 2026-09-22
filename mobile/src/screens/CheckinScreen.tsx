@@ -5,7 +5,7 @@ import {
   SafeAreaView, Modal, useWindowDimensions,
 } from 'react-native'
 import axios from 'axios'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getSessionToken } from '../services/session'
 import NfcManager, { NfcTech } from 'react-native-nfc-manager'
 import { API_URL } from '../config/api'
 
@@ -63,7 +63,7 @@ export default function CheckinScreen({ navigation }: any) {
 
     try {
       setCarregando(true)
-      const token = await AsyncStorage.getItem('token')
+      const token = await getSessionToken()
       const headers = { Authorization: `Bearer ${token}` }
 
       // 1. Busca o aluno pela tag

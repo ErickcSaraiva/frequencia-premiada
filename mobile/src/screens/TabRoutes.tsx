@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Importe suas telas aqui (ajuste os caminhos conforme seu projeto)
 import HomeScreen from './HomeScreen';
 import PresencasScreen from './PresencasScreen';
 import RelatoriosScreen from './RelatoriosScreen';
 import PerfilScreen from './PerfilScreen';
+import { useSession } from '../contexts/SessionContext'
 
 const Tab = createBottomTabNavigator();
 
@@ -19,8 +21,19 @@ const colors = {
 
 // Nosso componente customizado que vai substituir a barra manual
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+
   return (
-    <View style={styles.bottomNav}>
+    <View
+      style={[
+        styles.bottomNav,
+        {
+          height: 64 + bottomInset,
+          paddingBottom: bottomInset,
+        },
+      ]}
+    >
       {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
         const label = options.tabBarLabel !== undefined ? options.tabBarLabel : route.name;
@@ -56,7 +69,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             <Text style={isFocused ? styles.navIconActive : styles.navIcon}>
               {icon}
             </Text>
-            <Text style={isFocused ? styles.navTextActive : styles.navText}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={isFocused ? styles.navTextActive : styles.navText}
+            >
               {label}
             </Text>
           </TouchableOpacity>
@@ -67,23 +85,50 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabRoutes() {
+  const { session } = useSession()
+
+  if (!session) {
+    return null
+  }
+
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }} // Esconde o cabeçalho padrão
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Início' }} />
-      <Tab.Screen name="Presencas" component={PresencasScreen} options={{ tabBarLabel: 'Presença' }} />
-      <Tab.Screen name="Relatorios" component={RelatoriosScreen} options={{ tabBarLabel: 'Relatórios' }} />
-      <Tab.Screen name="Perfil" component={PerfilScreen} options={{ tabBarLabel: 'Perfil' }} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: 'Início' }}
+      />
+
+      {session.role === 'aluno' ? (
+        <Tab.Screen
+          name="Presencas"
+          component={PresencasScreen}
+          options={{ tabBarLabel: 'Histórico' }}
+        />
+      ) : (
+        <Tab.Screen
+          name="Relatorios"
+          component={RelatoriosScreen}
+          options={{ tabBarLabel: 'Relatórios' }}
+        />
+      )}
+
+      <Tab.Screen
+        name="Perfil"
+        component={PerfilScreen}
+        options={{ tabBarLabel: 'Perfil' }}
+      />
     </Tab.Navigator>
-  );
+  )
 }
 
 // Seus estilos exatos da barra inferior
 const styles = StyleSheet.create({
   bottomNav: {
-    height: 86,
+    minHeight: 72,
     borderTopWidth: 1,
     borderTopColor: colors.outlineVariant,
     backgroundColor: '#171a22',
@@ -93,13 +138,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   navItem: {
-    minWidth: 76,
-    height: 64,
+    flex: 1,
+    minWidth: 0,
+    height: 56,
+    marginHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navItemActive: {
-    minWidth: 130,
+    maxWidth: 130,
     borderRadius: 32,
     backgroundColor: colors.primaryContainer,
   },
