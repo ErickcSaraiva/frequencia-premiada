@@ -9,29 +9,21 @@ import { API_URL } from '../config/api'
 
 export type EduPointsView = 'director' | 'home' | 'nfc' | 'attendance'
 
-type Checkin = {
-  aluno: {
-    id: number
-    nome: string
-    pontos: number
-    turma: string
-  }
-  emRisco: boolean
-  horario: string
+type Checkin = { id: string; data: string; status: 'presente'; alunoId: string; turmaId: string; identificacao: string; turma: string }
+type AlunoRisco = { id: string; identificacao: string; turma: string }
+type TurmaRanking = { id: string; nome: string; pontos: number; totalAlunos: number }
+type PainelResumo = {
+  periodo: { inicio: string; fim: string; fusoHorario: string }
+  checkinsHoje: number
+  totalAlunos: number
+  totalRisco: number
+  alunosRisco: AlunoRisco[]
+  ranking: TurmaRanking[]
+  feed: Checkin[]
+  limiteFeed: number
 }
-
-type AlunoRisco = {
-  id: number
-  nome: string
-  turma: { nome: string }
-}
-
-type TurmaRanking = {
-  id: string
-  nome: string
-  pontos: number
-  totalAlunos?: number
-}
+type EstadoDados = 'carregando' | 'pronto' | 'erro'
+type EstadoSocket = 'conectando' | 'conectado' | 'reconectando' | 'desconectado' | 'erro'
 
 type AlunoEncontrado = {
   id?: string
@@ -43,26 +35,6 @@ type AlunoEncontrado = {
 
 type AttendanceStatus = 'Presente' | 'Falta' | 'Justificada'
 type AttendanceFilter = 'Todos' | AttendanceStatus
-
-const demoCheckins: Checkin[] = [
-  { aluno: { id: 1, nome: 'Ricardo Santos', pontos: 340, turma: 'Engenharia de Software' }, emRisco: false, horario: '2026-05-13T09:41:00' },
-  { aluno: { id: 2, nome: 'Ana Julia Oliveira', pontos: 328, turma: 'Arquitetura' }, emRisco: false, horario: '2026-05-13T09:40:00' },
-  { aluno: { id: 3, nome: 'Daniel Ferreira', pontos: 82, turma: 'Direito' }, emRisco: true, horario: '2026-05-13T09:39:00' },
-  { aluno: { id: 4, nome: 'Elisa Ribeiro', pontos: 301, turma: 'Economia' }, emRisco: false, horario: '2026-05-13T09:38:00' },
-]
-
-const demoRanking: TurmaRanking[] = [
-  { id: 'eng-computacao-a', nome: 'Eng. Computacao A', pontos: 980, totalAlunos: 32 },
-  { id: 'medicina-4b', nome: 'Medicina 4B', pontos: 942, totalAlunos: 28 },
-  { id: 'psicologia-noite', nome: 'Psicologia Noite', pontos: 918, totalAlunos: 30 },
-  { id: 'direito-2a', nome: 'Direito 2A', pontos: 874, totalAlunos: 27 },
-]
-
-const demoRisco: AlunoRisco[] = [
-  { id: 11, nome: 'Wesley Batista', turma: { nome: 'Direito 2A' } },
-  { id: 12, nome: 'Juliana Salgado', turma: { nome: 'Eng. Computacao A' } },
-  { id: 13, nome: 'Angelo Garcia', turma: { nome: 'Psicologia Noite' } },
-]
 
 const attendanceRows: Array<{ nome: string; matricula: string; status: AttendanceStatus; pontos: number }> = [
   { nome: 'Erick Freitas', matricula: '202300124', status: 'Presente', pontos: 980 },
@@ -85,17 +57,6 @@ const navItems: Array<{ view: EduPointsView; label: string; icon: string; path: 
   { view: 'nfc', label: 'Chamada NFC', icon: 'nfc', path: '/chamada' },
   { view: 'attendance', label: 'Presencas', icon: 'analytics', path: '/presencas' },
 ]
-
-const socket = io(API_URL, { autoConnect: false })
-
-function getResponseArray<T>(data: unknown): T[] {
-  return Array.isArray(data) ? data : []
-}
-
-function keepPreviousWhenEmpty<T>(data: unknown) {
-  const next = getResponseArray<T>(data)
-  return (previous: T[]) => (next.length > 0 ? next : previous)
-}
 
 function initials(nome: string) {
   return nome
@@ -126,57 +87,77 @@ function Icon({ name, className = '' }: { name: string; className?: string }) {
 }
 
 export default function Dashboard({ view }: { view: EduPointsView }) {
-  const [checkins, setCheckins] = useState<Checkin[]>(demoCheckins)
-  const [alunosRisco, setAlunosRisco] = useState<AlunoRisco[]>(demoRisco)
-  const [ranking, setRanking] = useState<TurmaRanking[]>(demoRanking)
-  const [conectado, setConectado] = useState(false)
+  const [resumo, setResumo] = useState<PainelResumo | null>(null)
+  const [estadoDados, setEstadoDados] = useState<EstadoDados>('carregando')
+  const [estadoSocket, setEstadoSocket] = useState<EstadoSocket>('conectando')
+  const [revisao, setRevisao] = useState(0)
   const navigate = useNavigate()
   const token = localStorage.getItem('token')
   const professor = useMemo(() => JSON.parse(localStorage.getItem('professor') || '{}'), [])
+  const demo = token === 'edupoints-demo'
 
   useEffect(() => {
-    if (!token || token === 'edupoints-demo') {
-      return
-    }
+    if (!token || demo || view !== 'director') return
+    let ativo = true
+    let requisicao: AbortController | undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const canal = io(API_URL, { autoConnect: false, auth: { token } })
 
-    const headers = { Authorization: `Bearer ${token}` }
-
-    axios.get(`${API_URL}/checkin/risco`, { headers })
-      .then((res) => setAlunosRisco(keepPreviousWhenEmpty<AlunoRisco>(res.data)))
-      .catch(() => setAlunosRisco((previous) => (previous.length > 0 ? previous : demoRisco)))
-
-    axios.get(`${API_URL}/turmas/ranking`, { headers })
-      .then((res) => setRanking(keepPreviousWhenEmpty<TurmaRanking>(res.data)))
-      .catch(() => setRanking((previous) => (previous.length > 0 ? previous : demoRanking)))
-
-    socket.connect()
-    socket.on('connect', () => setConectado(true))
-    socket.on('disconnect', () => setConectado(false))
-    socket.on('presenca:nova', (data) => {
-      const novaPresenca: Checkin = {
-        aluno: {
-          id: data.aluno.id,
-          nome: data.aluno.nome,
-          pontos: data.aluno.pontos,
-          turma: data.aluno.turma?.nome || 'Turma',
-        },
-        emRisco: data.emRisco || false,
-        horario: data.data || new Date().toISOString(),
+    const atualizar = async () => {
+      requisicao?.abort()
+      const atual = new AbortController()
+      requisicao = atual
+      setEstadoDados('carregando')
+      try {
+        const resposta = await axios.get<PainelResumo>(`${API_URL}/painel/resumo`, {
+          headers: { Authorization: `Bearer ${token}` }, signal: atual.signal,
+        })
+        if (ativo && requisicao === atual) {
+          setResumo(resposta.data)
+          setEstadoDados('pronto')
+        }
+      } catch {
+        if (ativo && requisicao === atual && !atual.signal.aborted) setEstadoDados('erro')
       }
-
-      setCheckins((prev) => [novaPresenca, ...prev].slice(0, 20))
-    })
-
-    return () => {
-      socket.off('connect')
-      socket.off('disconnect')
-      socket.off('presenca:nova')
-      socket.disconnect()
     }
-  }, [token])
+    // Um novo snapshot substitui o anterior; eventos em rajada produzem uma consulta.
+    const agendar = () => {
+      if (timer) clearTimeout(timer)
+      requisicao?.abort()
+      timer = setTimeout(() => { timer = undefined; void atualizar() }, 100)
+    }
+    const conectar = () => { setEstadoSocket('conectado'); agendar() }
+    const desconectar = () => setEstadoSocket('desconectado')
+    const erro = () => setEstadoSocket('erro')
+    const reconectando = () => setEstadoSocket('reconectando')
+    canal.on('connect', conectar)
+    canal.on('disconnect', desconectar)
+    canal.on('connect_error', erro)
+    canal.io.on('reconnect_attempt', reconectando)
+    canal.on('presenca:nova', agendar)
+    canal.on('presenca:editada', agendar)
+    canal.on('chamada:encerrada', agendar)
+    void atualizar()
+    canal.connect()
+    return () => {
+      ativo = false
+      if (timer) clearTimeout(timer)
+      requisicao?.abort()
+      canal.off('connect', conectar)
+      canal.off('disconnect', desconectar)
+      canal.off('connect_error', erro)
+      canal.io.off('reconnect_attempt', reconectando)
+      canal.off('presenca:nova', agendar)
+      canal.off('presenca:editada', agendar)
+      canal.off('chamada:encerrada', agendar)
+      canal.disconnect()
+    }
+  }, [token, demo, view, revisao])
 
-  const totalHoje = checkins.length + 1280
-  const presencaGeral = Math.round((attendanceRows.filter((row) => row.status !== 'Falta').length / attendanceRows.length) * 100)
+  const tentarNovamente = () => {
+    // Alterar a chave remonta apenas a assinatura e inicia uma consulta nova.
+    setRevisao((valor) => valor + 1)
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -191,7 +172,7 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
         <div className="profile-block">
           <div className="avatar">DA</div>
           <div>
-            <strong>{professor?.perfil || 'Diretoria Academica'}</strong>
+            <strong>{professor?.perfil || 'Professor'}</strong>
             <span>Admin Console</span>
           </div>
         </div>
@@ -217,13 +198,13 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
               <Icon name="menu" />
             </button>
             <strong>EduPoints</strong>
-            <span className={`live-pill ${conectado || token === 'edupoints-demo' ? 'online' : ''}`}>
+            <span className={`live-pill ${view === 'director' && estadoSocket === 'conectado' ? 'online' : ''}`}>
               <span />
-              {conectado || token === 'edupoints-demo' ? 'Live: Campus Central' : 'Conectando'}
+              Socket: {demo ? 'modo demo' : view === 'director' ? estadoSocket : 'desconectado'}
             </span>
           </div>
           <div className="topbar-user">
-            <span>{professor?.nome || 'Prof. Ricardo Silva'}</span>
+            <span>{professor?.nome || 'Professor'}</span>
             <button className="icon-button" onClick={handleLogout} type="button" aria-label="Sair">
               <Icon name="logout" />
             </button>
@@ -232,15 +213,14 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
 
         {view === 'director' ? (
           <DirectorDashboard
-            totalHoje={totalHoje}
-            alunosRisco={alunosRisco}
-            ranking={ranking}
-            checkins={checkins}
+            resumo={resumo}
+            estado={demo ? 'demo' : estadoDados}
+            tentarNovamente={tentarNovamente}
           />
         ) : null}
         {view === 'home' ? <HomeView navigate={navigate} handleLogout={handleLogout} /> : null}
         {view === 'nfc' ? <NfcView token={token} /> : null}
-        {view === 'attendance' ? <AttendanceView presencaGeral={presencaGeral} /> : null}
+        {view === 'attendance' ? <AttendanceView presencaGeral={0} /> : null}
       </div>
 
       <nav className="bottom-nav">
@@ -260,92 +240,52 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
   )
 }
 
-function DirectorDashboard({
-  totalHoje,
-  alunosRisco,
-  ranking,
-  checkins,
-}: {
-  totalHoje: number
-  alunosRisco: AlunoRisco[]
-  ranking: TurmaRanking[]
-  checkins: Checkin[]
+function DirectorDashboard({ resumo, estado, tentarNovamente }: {
+  resumo: PainelResumo | null
+  estado: EstadoDados | 'demo'
+  tentarNovamente: () => void
 }) {
+  const disponivel = estado === 'pronto' || estado === 'erro' ? resumo : null
   return (
     <main className="content-grid">
+      {estado === 'demo' && <p className="panel-status">Modo demo: o painel oficial exige login de professor.</p>}
+      {estado === 'carregando' && <p className="panel-status" role="status">Carregando dados oficiais...</p>}
+      {estado === 'erro' && <div className="panel-status" role="alert">Não foi possível atualizar os dados. {resumo ? 'Os dados anteriores podem estar desatualizados.' : ''} <button type="button" onClick={tentarNovamente}>Tentar novamente</button></div>}
+      {resumo && estado === 'pronto' && <p className="panel-period">Período: {new Date(resumo.periodo.inicio).toLocaleDateString('pt-BR', { timeZone: resumo.periodo.fusoHorario })} · {resumo.periodo.fusoHorario}</p>}
       <section className="summary-grid">
-        <MetricCard label="Check-ins hoje" value={totalHoje.toLocaleString('pt-BR')} tone="primary" detail="+12% vs ontem" icon="trending_up" />
-        <MetricCard label="Alunos em risco" value={alunosRisco.length.toString()} tone="danger" detail="Acao requerida" icon="warning" />
-        <MetricCard label="Total cadastrado" value="3.500" tone="neutral" detail="98% ativos" icon="person" />
+        <MetricCard label="Check-ins hoje" value={disponivel?.checkinsHoje.toLocaleString('pt-BR') ?? '—'} tone="primary" detail="Presenças confirmadas" icon="how_to_reg" />
+        <MetricCard label="Alunos em risco" value={disponivel?.totalRisco.toLocaleString('pt-BR') ?? '—'} tone="danger" detail="3 faltas consecutivas" icon="warning" />
+        <MetricCard label="Total cadastrado" value={disponivel?.totalAlunos.toLocaleString('pt-BR') ?? '—'} tone="neutral" detail="Alunos cadastrados" icon="person" />
       </section>
-
       <section className="director-layout">
         <div className="panel monitor-panel">
-          <div className="section-title">
-            <h2>Monitoramento</h2>
-            <span>NFC Live</span>
-          </div>
+          <div className="section-title"><h2>Monitoramento</h2><span>Últimas {resumo?.limiteFeed ?? 20} presenças</span></div>
           <div className="feed-list">
-            {checkins.map((checkin) => (
-              <article className={checkin.emRisco ? 'feed-item alert' : 'feed-item'} key={`${checkin.aluno.id}-${checkin.horario}`}>
-                <div className="feed-icon">
-                  <Icon name={checkin.emRisco ? 'error' : 'nfc'} />
-                </div>
-                <div>
-                  <strong>{checkin.aluno.nome}</strong>
-                  <span>{checkin.aluno.turma} • {new Date(checkin.horario).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                <i />
+            {disponivel?.feed.length ? disponivel.feed.map((checkin) => (
+              <article className="feed-item" key={checkin.id}>
+                <div className="feed-icon"><Icon name="nfc" /></div>
+                <div><strong>{checkin.identificacao}</strong><span>{checkin.turma} • {new Date(checkin.data).toLocaleString('pt-BR', { timeZone: resumo?.periodo.fusoHorario, dateStyle: 'short', timeStyle: 'short' })}</span></div><i />
               </article>
-            ))}
+            )) : disponivel && <p className="empty-state">Nenhuma presença registrada.</p>}
           </div>
         </div>
-
         <div className="panel">
-          <div className="section-title">
-            <h2>Ranking de Turmas</h2>
-          </div>
+          <div className="section-title"><h2>Ranking de Turmas</h2></div>
           <div className="ranking-list">
-            {ranking.length > 0 ? (
-              ranking.slice(0, 4).map((turma, index) => (
-                <article className={`rank-card rank-${index + 1}`} key={turma.id}>
-                  <Icon name="workspace_premium" />
-                  <div>
-                    <strong>{turma.nome}</strong>
-                    <small>
-                      {turma.pontos} pontos acumulados
-                      {turma.totalAlunos ? ` • ${turma.totalAlunos} alunos` : ''}
-                    </small>
-                  </div>
-                  <b>{index + 1}º</b>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">Nenhum ranking encontrado.</p>
-            )}
+            {disponivel?.ranking.length ? disponivel.ranking.slice(0, 4).map((turma, index) => (
+              <article className={`rank-card rank-${index + 1}`} key={turma.id}>
+                <Icon name="workspace_premium" />
+                <div><strong>{turma.nome}</strong><small>{turma.pontos} pontos acumulados • {turma.totalAlunos} alunos</small></div><b>{index + 1}º</b>
+              </article>
+            )) : disponivel && <p className="empty-state">Nenhuma turma encontrada.</p>}
           </div>
         </div>
-
         <div className="panel">
-          <div className="section-title">
-            <h2>Faltas Criticas</h2>
-            <span className="danger-text">Busca ativa</span>
-          </div>
+          <div className="section-title"><h2>Faltas Críticas</h2><span className="danger-text">Busca ativa</span></div>
           <div className="risk-list">
-            {alunosRisco.length > 0 ? (
-              alunosRisco.map((aluno) => (
-                <article key={aluno.id}>
-                  <div className="avatar danger">{initials(aluno.nome)}</div>
-                  <div>
-                    <strong>{aluno.nome}</strong>
-                    <span>{aluno.turma?.nome || 'Turma'} • 3 faltas consecutivas</span>
-                  </div>
-                  <button type="button">Notificar</button>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">Nenhum aluno com faltas criticas.</p>
-            )}
+            {disponivel?.alunosRisco.length ? disponivel.alunosRisco.map((aluno) => (
+              <article key={aluno.id}><div className="avatar danger">{initials(aluno.identificacao)}</div><div><strong>{aluno.identificacao}</strong><span>{aluno.turma} • 3 faltas consecutivas</span></div></article>
+            )) : disponivel && <p className="empty-state">Nenhum aluno com faltas críticas.</p>}
           </div>
         </div>
       </section>

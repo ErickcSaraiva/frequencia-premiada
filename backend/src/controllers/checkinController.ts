@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { prisma } from '../prisma'
 import { io } from '../server'
+import { presencaEvento } from '../presencaEvento'
 
 // 1. REGISTRAR CHECK-IN
 export const registrarCheckin = async (req: Request, res: Response): Promise<any> => {
@@ -49,16 +50,7 @@ export const registrarCheckin = async (req: Request, res: Response): Promise<any
       }),
     ])
 
-    io.emit('presenca:nova', {
-  aluno: {
-    id: aluno.id,
-    nome: aluno.nome,
-    pontos: alunoAtualizado.pontos,
-    turma: { nome: aluno.turma.nome },
-  },
-  emRisco: false,
-  data: new Date().toISOString(),
-})
+    io.emit('presenca:nova', presencaEvento(presenca))
 
     return res.status(201).json({
   message: 'Presença registrada!',

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { prisma } from '../prisma'
 import { io } from '../server'
+import { presencaEvento } from '../presencaEvento'
 
 // Editar presença manualmente
 export const editarPresenca = async (req: Request, res: Response) => {
@@ -55,11 +56,7 @@ export const editarPresenca = async (req: Request, res: Response) => {
     }
 
     // Emite evento de auditoria para o Dashboard
-    io.emit('presenca:editada', {
-      presenca: presencaAtualizada,
-      editadoPor: professor.email,
-      justificativa: justificativa || null,
-    })
+    io.emit('presenca:editada', presencaEvento(presencaAtualizada))
 
     return res.json({
       message: 'Presença atualizada com sucesso!',
@@ -99,6 +96,8 @@ export const lancarFaltaJustificada = async (req: Request, res: Response) => {
         turma: true,
       },
     })
+
+    io.emit('presenca:nova', presencaEvento(presenca))
 
     return res.status(201).json({
       message: 'Falta justificada lançada com sucesso!',
@@ -171,7 +170,7 @@ export const registrarPresenca = async (req: Request, res: Response) => {
     ])
 
     // 4. Aciona o WebSocket para atualizar o Dashboard
-    io.emit('presenca:nova', presenca)
+    io.emit('presenca:nova', presencaEvento(presenca))
 
     return res.status(201).json({
       message: 'Presença registrada com sucesso!',
