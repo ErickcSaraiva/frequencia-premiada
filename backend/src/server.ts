@@ -11,6 +11,8 @@ import checkinRoutes from './routes/checkinRoutes'
 import presencaRoutes from './routes/presencaRoutes'
 import lgpdRoutes from './routes/lgpdRoutes'
 import professorRoutes from './routes/professorRoutes' // 👈 1. Importe as rotas do professor aqui
+import painelRoutes from './routes/painelRoutes'
+import jwt from 'jsonwebtoken'
 
 dotenv.config()
 
@@ -33,6 +35,7 @@ const io = new Server(httpServer, {
 app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
 app.use('/presencas', presencaRoutes)
+app.use('/painel', painelRoutes)
 
 // Rotas da API
 app.use('/auth', authRoutes)
@@ -56,6 +59,17 @@ app.get('/', (req, res) => {
 })
 
 // Socket.io — conexão em tempo real
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth.token
+    if (typeof token !== 'string') throw new Error('Token ausente')
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string)
+    if (typeof payload === 'string' || payload.role !== 'professor') throw new Error('Acesso não autorizado')
+    next()
+  } catch {
+    next(new Error('Acesso não autorizado'))
+  }
+})
 io.on('connection', (socket) => {
   console.log(`✅ Dashboard conectado: ${socket.id}`)
 
