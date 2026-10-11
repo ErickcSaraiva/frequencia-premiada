@@ -35,7 +35,7 @@
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   min-height: 100svh;
   background:
     radial-gradient(circle at top left, rgba(77, 142, 255, 0.13), transparent 34rem),
@@ -1742,7 +1742,7 @@ tbody tr:hover {
 }
 
 /* FREQ-010: o texto de conexão e os cards permanecem legíveis em telas pequenas. */
-.panel-status, .panel-period { margin: 0 0 16px; line-height: 1.5; }
+.panel-status, .panel-period { margin: 0 0 16px; line-height: 1.5; overflow-wrap: anywhere; }
 .panel-status { border: 1px solid var(--outline-variant); border-radius: 8px; padding: 12px 16px; }
 .panel-status[role="alert"] { border-color: var(--error); color: var(--error); }
 .panel-status button { background: var(--surface-high); border: 1px solid var(--outline); border-radius: 6px; color: var(--on-surface); padding: 6px 10px; }

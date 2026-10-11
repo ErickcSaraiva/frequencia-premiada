@@ -24,3 +24,16 @@ O Socket exige JWT de professor em `auth.token`, na mesma origem de `VITE_API_UR
 6. Confira apelidos/iniciais e ausência de dados sensíveis no Network/Socket. Verifique a tela em 1440, 768, 360 e 320 px, inclusive ausência de rolagem horizontal.
 
 A validação visual e o fluxo com app/tag física exigem execução manual em navegador/dispositivo. Não são cobertos pela suíte automatizada.
+
+## Evidência local de 10/10/2026
+
+Execução em PostgreSQL 17 temporário, com dados em memória e porta local 5433; API desta branch na 3334 e Vite na 5174. As portas 3333 e 5173 pertenciam a outro checkout. O volume persistente do Compose não foi usado.
+
+- `npm run lint` e `npm run build` do dashboard passaram; geração Prisma, build e suíte completa do backend passaram (7 suítes, 30 testes).
+- Chrome 155 headless: com seed, painel exibiu 0 check-ins, 0 alunos em risco e 1 aluno; o feed estava vazio. A resposta coincidiu com `GET /painel/resumo`.
+- O `POST /checkin` usado em `mobile/src/screens/CheckinScreen.tsx`, com JWT de professor e tag de teste, atualizou card, feed e ranking sem reload. Duas edições do mesmo ID não duplicaram o feed. A correção para `falta` removeu o item e reduziu o total; a volta para `presente` recuperou ambos.
+- Após duas faltas anteriores de um segundo aluno, `POST /checkin/encerrar` criou a terceira; risco e total cadastrado atualizaram após o evento. O painel mostrou apenas o apelido `TP`.
+- Com o navegador offline, outra presença foi registrada pelo endpoint autorizado. Ao reconectar, card e feed recuperaram o registro sem duplicação. Bloquear a consulta HTTP mostrou erro e o botão **Tentar novamente** recuperou os dados. Três ciclos de sair e voltar ao painel terminaram com um feed consistente e uma conexão ativa por montagem.
+- Chrome em 1440, 768, 360 e 320 px: cards legíveis e sem rolagem horizontal após a correção de `body.min-width`. O teste comparou `scrollWidth` com `clientWidth` e as capturas foram inspecionadas visualmente.
+
+Não havia dispositivo ou emulador Android no ADB. O mesmo endpoint usado pelo app do professor foi exercitado por outro cliente autorizado; a interface nativa e a leitura NFC física ainda exigem validação em dispositivo. O banco temporário pode ser descartado sem afetar dados persistentes.
