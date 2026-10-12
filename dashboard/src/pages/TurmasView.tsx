@@ -6,6 +6,7 @@ type Turma = {
   id: string
   nome: string
 }
+
 type Aluno = {
   id: string
   nome: string
@@ -20,23 +21,26 @@ export default function TurmasView({ token }: { token: string | null }) {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [tentativa, setTentativa] = useState(0)
+
   const [turmaSelecionada, setTurmaSelecionada] = useState<Turma | null>(null)
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [carregandoAlunos, setCarregandoAlunos] = useState(false)
   const [erroAlunos, setErroAlunos] = useState('')
   const [tentativaAlunos, setTentativaAlunos] = useState(0)
+
+  const [nomeNovaTurma, setNomeNovaTurma] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erroCadastro, setErroCadastro] = useState('')
+  const [sucessoCadastro, setSucessoCadastro] = useState('')
+
   const perfil = (() => {
-  try {
-    const conta = JSON.parse(localStorage.getItem('professor') || '{}')
+    try {
+      const conta = JSON.parse(localStorage.getItem('professor') || '{}')
       return conta?.perfil
     } catch {
       return null
     }
   })()
-  const [nomeNovaTurma, setNomeNovaTurma] = useState('')
-  const [salvando, setSalvando] = useState(false)
-  const [erroCadastro, setErroCadastro] = useState('')
-  const [sucessoCadastro, setSucessoCadastro] = useState('')
 
   // Consulta as turmas ao abrir a tela ou solicitar uma atualização.
   useEffect(() => {
@@ -119,58 +123,54 @@ export default function TurmasView({ token }: { token: string | null }) {
     }
   }
 
+  // Busca os alunos da turma selecionada e cancela a consulta anterior
+  // quando a seleção mudar.
   useEffect(() => {
-  if (!turmaSelecionada || !token) return
+    if (!turmaSelecionada || !token) return
 
-  const controller = new AbortController()
+    const controller = new AbortController()
+    const turmaId = turmaSelecionada.id
 
-  if (!turmaSelecionada || !token) {
-    setCarregandoAlunos(false)
-    return
-  }
+    async function carregarAlunos() {
+      setCarregandoAlunos(true)
 
-  const controller = new AbortController()
-  const turmaId = turmaSelecionada.id
+      try {
+        const resposta = await axios.get<Aluno[]>(
+          `${API_URL}/alunos/turma/${encodeURIComponent(turmaId)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          },
+        )
 
-  async function carregarAlunos() {
-    setCarregandoAlunos(true)
+        if (!controller.signal.aborted) {
+          setAlunos(resposta.data)
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
 
-    try {
-      const resposta = await axios.get<Aluno[]>(
-        `${API_URL}/alunos/turma/${encodeURIComponent(turmaId)}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        },
-      )
+        const status = axios.isAxiosError(error)
+          ? error.response?.status
+          : undefined
 
-      if (!controller.signal.aborted) {
-        setAlunos(resposta.data)
-      }
-    } catch (error) {
-      if (controller.signal.aborted) return
-
-      const status = axios.isAxiosError(error)
-        ? error.response?.status
-        : undefined
-
-      setErroAlunos(
-        status === 401
-          ? 'Sua sessão expirou. Faça login novamente.'
-          : status === 403 || status === 404
-            ? 'Essa turma não está disponível para seu acesso.'
-            : 'Não foi possível carregar os alunos.',
-      )
-    } finally {
-      if (!controller.signal.aborted) {
-        setCarregandoAlunos(false)
+        setErroAlunos(
+          status === 401
+            ? 'Sua sessão expirou. Faça login novamente.'
+            : status === 403 || status === 404
+              ? 'Essa turma não está disponível para seu acesso.'
+              : 'Não foi possível carregar os alunos.',
+        )
+      } finally {
+        if (!controller.signal.aborted) {
+          setCarregandoAlunos(false)
+        }
       }
     }
-  }
 
-  void carregarAlunos()
-  return () => controller.abort()
-}, [turmaSelecionada, token, tentativaAlunos])
+    void carregarAlunos()
+
+    return () => controller.abort()
+  }, [turmaSelecionada, token, tentativaAlunos])
 
   const turmasFiltradas = turmas.filter((turma) =>
     turma.nome
@@ -181,35 +181,36 @@ export default function TurmasView({ token }: { token: string | null }) {
   return (
     <main className="home-view">
       <h1>Turmas</h1>
-    {perfil === 'professor' && (
-      <section aria-labelledby="titulo-cadastro-turma">
-        <h2 id="titulo-cadastro-turma">Criar turma</h2>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            void criarTurma()
-          }}
-        >
-          <label htmlFor="nome-nova-turma">Nome da turma</label>
-          <input
-            id="nome-nova-turma"
-            type="text"
-            value={nomeNovaTurma}
-            onChange={(event) => setNomeNovaTurma(event.target.value)}
-            placeholder="Ex.: Ciência da Computação"
-            required
-            disabled={salvando}
-          />
+      {perfil === 'professor' && (
+        <section aria-labelledby="titulo-cadastro-turma">
+          <h2 id="titulo-cadastro-turma">Criar turma</h2>
 
-          <button type="submit" disabled={salvando}>
-            {salvando ? 'Salvando...' : 'Criar turma'}
-          </button>
-        </form>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              void criarTurma()
+            }}
+          >
+            <label htmlFor="nome-nova-turma">Nome da turma</label>
+            <input
+              id="nome-nova-turma"
+              type="text"
+              value={nomeNovaTurma}
+              onChange={(event) => setNomeNovaTurma(event.target.value)}
+              placeholder="Ex.: Ciência da Computação"
+              required
+              disabled={salvando}
+            />
 
-        {erroCadastro ? <p role="alert">{erroCadastro}</p> : null}
-        {sucessoCadastro ? <p role="status">{sucessoCadastro}</p> : null}
-          </section>
+            <button type="submit" disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Criar turma'}
+            </button>
+          </form>
+
+          {erroCadastro ? <p role="alert">{erroCadastro}</p> : null}
+          {sucessoCadastro ? <p role="status">{sucessoCadastro}</p> : null}
+        </section>
       )}
 
       <section aria-labelledby="titulo-lista-turmas">
@@ -232,11 +233,7 @@ export default function TurmasView({ token }: { token: string | null }) {
             <p>{erro}</p>
             <button
               type="button"
-              onClick={() => {
-                setErroAlunos('')
-                setCarregandoAlunos(true)
-                setTentativaAlunos((valor) => valor + 1)
-              }}
+              onClick={() => setTentativa((valor) => valor + 1)}
             >
               Tentar novamente
             </button>
@@ -249,71 +246,78 @@ export default function TurmasView({ token }: { token: string | null }) {
           <ul>
             {turmasFiltradas.map((turma) => (
               <li key={turma.id}>
-              <span>{turma.nome}</span>{' '}
-              <button
-                type="button"
-                onClick={() => {
-                setAlunos([])
-                setErroAlunos('')
-                setCarregandoAlunos(true)
-                setTurmaSelecionada(turma)
-                setTentativaAlunos(valor => valor + 1)
-    }}
-  >
-    Ver alunos
-  </button>
-</li>
+                <span>{turma.nome}</span>{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAlunos([])
+                    setErroAlunos('')
+                    setCarregandoAlunos(true)
+                    setTurmaSelecionada(turma)
+                    setTentativaAlunos((valor) => valor + 1)
+                  }}
+                >
+                  Ver alunos
+                </button>
+              </li>
             ))}
           </ul>
         )}
       </section>
-      {turmaSelecionada ? (
-  <section aria-labelledby="titulo-alunos-turma">
-    <h2 id="titulo-alunos-turma">
-      Alunos — {turmaSelecionada.nome}
-    </h2>
 
-    {carregandoAlunos ? (
-      <p role="status">Carregando alunos...</p>
-    ) : erroAlunos ? (
-      <div role="alert">
-        <p>{erroAlunos}</p>
-        <button
-          type="button"
-          onClick={() => setTentativaAlunos(valor => valor + 1)}
-        >
-          Tentar novamente
-        </button>
-      </div>
-    ) : alunos.length === 0 ? (
-      <p>Nenhum aluno cadastrado nesta turma.</p>
-    ) : (
-      <>
-        <p>Total: {alunos.length} alunos</p>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Nome</th>
-              <th scope="col">Matrícula</th>
-              <th scope="col">Tag NFC</th>
-              <th scope="col">Pontos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {alunos.map(aluno => (
-              <tr key={aluno.id}>
-                <td>{aluno.nome}</td>
-                <td>{aluno.matricula}</td>
-                <td>{aluno.nfc_uid ? 'Vinculada' : 'Não vinculada'}</td>
-                <td>{aluno.pontos}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </>
-    )}
-  </section>
-) : null}
+      {turmaSelecionada ? (
+        <section aria-labelledby="titulo-alunos-turma">
+          <h2 id="titulo-alunos-turma">
+            Alunos — {turmaSelecionada.nome}
+          </h2>
+
+          {carregandoAlunos ? (
+            <p role="status">Carregando alunos...</p>
+          ) : erroAlunos ? (
+            <div role="alert">
+              <p>{erroAlunos}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setErroAlunos('')
+                  setCarregandoAlunos(true)
+                  setTentativaAlunos((valor) => valor + 1)
+                }}
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : alunos.length === 0 ? (
+            <p>Nenhum aluno cadastrado nesta turma.</p>
+          ) : (
+            <>
+              <p>Total: {alunos.length} alunos</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Matrícula</th>
+                    <th scope="col">Tag NFC</th>
+                    <th scope="col">Pontos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {alunos.map((aluno) => (
+                    <tr key={aluno.id}>
+                      <td>{aluno.nome}</td>
+                      <td>{aluno.matricula}</td>
+                      <td>
+                        {aluno.nfc_uid ? 'Vinculada' : 'Não vinculada'}
+                      </td>
+                      <td>{aluno.pontos}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </section>
+      ) : null}
     </main>
   )
 }
