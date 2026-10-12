@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 
-type Role = 'aluno' | 'professor'
+type Role = 'aluno' | 'professor' | 'admin'
 
 interface JwtUserPayload extends jwt.JwtPayload {
   id: string
@@ -10,7 +10,7 @@ interface JwtUserPayload extends jwt.JwtPayload {
   email?: string
 }
 
-const rolesValidas: Role[] = ['aluno', 'professor']
+const rolesValidas: Role[] = ['aluno', 'professor', 'admin']
 
 const isJwtUserPayload = (payload: string | jwt.JwtPayload): payload is JwtUserPayload =>
   typeof payload !== 'string' &&

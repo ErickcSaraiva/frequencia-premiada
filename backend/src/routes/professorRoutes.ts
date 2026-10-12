@@ -4,11 +4,11 @@ import { autenticar, autorizarRole } from '../middlewares/authMiddleware'
 
 const router = Router()
 
-// Somente um professor autenticado pode cadastrar outro professor.
+// Somente um administrador autenticado pode cadastrar outro professor.
 router.post(
   '/',
   autenticar,
-  autorizarRole(['professor']),
+  autorizarRole(['admin']),
   cadastrarProfessor
 )
 

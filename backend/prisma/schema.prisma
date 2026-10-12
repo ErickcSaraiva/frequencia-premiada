@@ -31,6 +31,11 @@ model Turma {
 
   disciplina   Disciplina? @relation(fields: [disciplinaId], references: [id])
   disciplinaId String?
+
+  professor   Professor? @relation(fields: [professorId], references: [id])
+  professorId String?
+
+  @@index([professorId])
 }
 
 model Presenca {
@@ -46,11 +51,19 @@ model Presenca {
   turmaId String
 }
 
+enum PerfilEquipe {
+  professor
+  admin
+}
+
 model Professor {
   id    String @id @default(uuid())
   nome  String
   email String @unique
   senha String
+  perfil PerfilEquipe @default(professor)
+
+  turmas Turma[]
 }
 
 model Disciplina {

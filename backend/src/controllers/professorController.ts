@@ -60,6 +60,7 @@ export const cadastrarProfessor = async (req: Request, res: Response) => {
         nome,
         email,
         senha: senhaHash,
+        perfil: 'professor',
       },
     })
 
@@ -69,6 +70,7 @@ export const cadastrarProfessor = async (req: Request, res: Response) => {
         id: professor.id,
         nome: professor.nome,
         email: professor.email,
+        perfil: professor.perfil,
       },
     })
   } catch (error) {

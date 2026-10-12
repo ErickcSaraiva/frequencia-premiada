@@ -3,5 +3,5 @@ import { resumoPainel } from '../controllers/painelController'
 import { autenticar, autorizarRole } from '../middlewares/authMiddleware'
 
 const router = Router()
-router.get('/resumo', autenticar, autorizarRole(['professor']), resumoPainel)
+router.get('/resumo', autenticar, autorizarRole(['admin']), resumoPainel)
 export default router

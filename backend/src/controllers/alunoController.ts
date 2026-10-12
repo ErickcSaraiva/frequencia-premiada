@@ -101,20 +101,57 @@ export const loginAluno = async (req: Request, res: Response) => {
 
 // 3. Listar alunos por turma
 export const listarAlunosPorTurma = async (req: Request, res: Response) => {
-  const { turmaId } = req.params
+  const usuario = req.user
+  const turmaId = req.params.turmaId
+
+  if (!usuario) {
+    return res.status(401).json({ erro: 'Usuário não autenticado' })
+  }
+
+  if (usuario.role !== 'professor' && usuario.role !== 'admin') {
+    return res.status(403).json({ erro: 'Acesso não autorizado' })
+  }
+
+  if (typeof turmaId !== 'string' || !turmaId.trim()) {
+    return res.status(400).json({ erro: 'Informe uma turma válida' })
+  }
 
   try {
+    // Confere a permissão antes de consultar os alunos.
+    const turma = await prisma.turma.findFirst({
+      where: {
+        id: turmaId,
+        ...(usuario.role === 'professor'
+          ? { professorId: usuario.id }
+          : {}),
+      },
+      select: { id: true },
+    })
+
+    if (!turma) {
+      return res.status(404).json({
+        erro: 'Turma não encontrada ou indisponível para seu acesso',
+      })
+    }
+
     const alunos = await prisma.aluno.findMany({
-      where: { turmaId: String(turmaId) },
+      where: { turmaId: turma.id },
       orderBy: { nome: 'asc' },
-      select: { // Exclui a senha da listagem para segurança
-        id: true, nome: true, apelido: true, matricula: true, nfc_uid: true, pontos: true
-      }
+      select: {
+        id: true,
+        nome: true,
+        apelido: true,
+        matricula: true,
+        nfc_uid: true,
+        pontos: true,
+      },
     })
 
     return res.json(alunos)
   } catch (error) {
-    return res.status(500).json({ erro: 'Erro interno do servidor ao listar alunos' })
+    return res.status(500).json({
+      erro: 'Erro interno do servidor ao listar alunos',
+    })
   }
 }
 
