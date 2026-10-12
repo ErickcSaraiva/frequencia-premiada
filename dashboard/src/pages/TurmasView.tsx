@@ -120,8 +120,9 @@ export default function TurmasView({ token }: { token: string | null }) {
   }
 
   useEffect(() => {
-  setAlunos([])
-  setErroAlunos('')
+  if (!turmaSelecionada || !token) return
+
+  const controller = new AbortController()
 
   if (!turmaSelecionada || !token) {
     setCarregandoAlunos(false)
@@ -231,7 +232,11 @@ export default function TurmasView({ token }: { token: string | null }) {
             <p>{erro}</p>
             <button
               type="button"
-              onClick={() => setTentativa((valor) => valor + 1)}
+              onClick={() => {
+                setErroAlunos('')
+                setCarregandoAlunos(true)
+                setTentativaAlunos((valor) => valor + 1)
+              }}
             >
               Tentar novamente
             </button>
