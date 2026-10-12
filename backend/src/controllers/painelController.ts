@@ -39,8 +39,19 @@ export const resumoPainel = async (_req: Request, res: Response) => {
         orderBy: [{ data: 'desc' }, { id: 'desc' }], take: LIMITE_FEED,
       }),
     ])
-    const identificacao = (nome: string, apelido: string | null) =>
-      apelido?.trim() || nome.trim().split(/\s+/).map(parte => parte[0]).slice(0, 2).join('').toUpperCase()
+    const identificacao = (nome: string, apelido: string | null) => {
+  // Preserva o apelido quando estiver cadastrado.
+  const apelidoLimpo = apelido?.trim()
+  if (apelidoLimpo) return apelidoLimpo
+
+  // Sem apelido, mostra primeiro e último nome.
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+
+  if (partes.length === 0) return 'Aluno'
+  if (partes.length === 1) return partes[0]
+
+  return `${partes[0]} ${partes[partes.length - 1]}`
+}
     const risco = alunos.filter(aluno =>
       aluno.presencas.length === 3 && aluno.presencas.every(p => p.status === 'falta'),
     )

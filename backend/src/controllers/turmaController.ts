@@ -1,13 +1,32 @@
 import { Request, Response } from 'express'
 import { prisma } from '../prisma'
 
-// Cadastrar turma
+// Cadastrar turma vinculada ao professor autenticado
 export const cadastrarTurma = async (req: Request, res: Response) => {
-  const { nome } = req.body
+  const professor = req.user
+
+  if (!professor) {
+    return res.status(401).json({ erro: 'Usuário não autenticado' })
+  }
+
+  if (professor.role !== 'professor') {
+    return res.status(403).json({ erro: 'Acesso não autorizado' })
+  }
+
+  const nome = typeof req.body?.nome === 'string'
+    ? req.body.nome.trim()
+    : ''
+
+  if (!nome) {
+    return res.status(400).json({ erro: 'Informe o nome da turma' })
+  }
 
   try {
     const turma = await prisma.turma.create({
-      data: { nome },
+      data: {
+        nome,
+        professorId: professor.id,
+      },
     })
 
     return res.status(201).json({
@@ -18,11 +37,23 @@ export const cadastrarTurma = async (req: Request, res: Response) => {
     return res.status(500).json({ erro: 'Erro interno do servidor' })
   }
 }
-
-// Listar todas as turmas
+// Administração vê todas; professor vê suas próprias turmas.
 export const listarTurmas = async (req: Request, res: Response) => {
+  const usuario = req.user
+
+  if (!usuario) {
+    return res.status(401).json({ erro: 'Usuário não autenticado' })
+  }
+
+  if (usuario.role !== 'professor' && usuario.role !== 'admin') {
+    return res.status(403).json({ erro: 'Acesso não autorizado' })
+  }
+
   try {
     const turmas = await prisma.turma.findMany({
+      where: usuario.role === 'admin'
+        ? {}
+        : { professorId: usuario.id },
       orderBy: { nome: 'asc' },
     })
 

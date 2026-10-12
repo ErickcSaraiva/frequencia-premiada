@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import request from 'supertest'
 import { app } from '../src/server'
 
-const criarToken = (role: 'aluno' | 'professor') =>
+const criarToken = (role: 'aluno' | 'professor' | 'admin') =>
   jwt.sign(
     {
       id: 'usuario-de-teste',
@@ -57,7 +57,7 @@ describe('Segurança do cadastro de professores', () => {
   it('rejeita senha vazia antes de consultar o banco', async () => {
     const response = await request(app)
       .post('/professores')
-      .set('Authorization', `Bearer ${criarToken('professor')}`)
+      .set('Authorization', `Bearer ${criarToken('admin')}`)
       .send({
         nome: 'Teste',
         email: 'teste@edupoints.com',
@@ -73,7 +73,7 @@ describe('Segurança do cadastro de professores', () => {
   it('rejeita senha com menos de 12 caracteres', async () => {
     const response = await request(app)
       .post('/professores')
-      .set('Authorization', `Bearer ${criarToken('professor')}`)
+      .set('Authorization', `Bearer ${criarToken('admin')}`)
       .send({
         nome: 'Teste',
         email: 'teste@edupoints.com',
@@ -89,7 +89,7 @@ describe('Segurança do cadastro de professores', () => {
   it('rejeita e-mail inválido', async () => {
     const response = await request(app)
       .post('/professores')
-      .set('Authorization', `Bearer ${criarToken('professor')}`)
+      .set('Authorization', `Bearer ${criarToken('admin')}`)
       .send({
         nome: 'Teste',
         email: 'email-invalido',
@@ -99,4 +99,18 @@ describe('Segurança do cadastro de professores', () => {
     expect(response.status).toBe(400)
     expect(response.body.erro).toBe('Informe um e-mail válido')
   })
+})
+
+it('bloqueia cadastro realizado por professor', async () => {
+  const response = await request(app)
+    .post('/professores')
+    .set('Authorization', `Bearer ${criarToken('professor')}`)
+    .send({
+      nome: 'Teste',
+      email: 'teste@edupoints.com',
+      senha: 'senha-segura-123',
+    })
+
+  expect(response.status).toBe(403)
+  expect(response.body.erro).toBe('Acesso não autorizado')
 })

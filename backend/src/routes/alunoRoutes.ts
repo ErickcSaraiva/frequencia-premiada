@@ -35,11 +35,11 @@ router.post(
   cadastrarAluno,
 )
 
-// Listagem dos alunos de uma turma: somente professor.
+// Administração e professor podem consultar alunos conforme o vínculo.
 router.get(
   '/turma/:turmaId',
   autenticar,
-  autorizarRole(['professor']),
+  autorizarRole(['professor', 'admin']),
   listarAlunosPorTurma,
 )
 

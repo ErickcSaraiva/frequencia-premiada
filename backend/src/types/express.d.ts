@@ -3,7 +3,7 @@ declare global {
     interface Request {
       user?: {
         id: string
-        role: 'aluno' | 'professor'
+        role: 'aluno' | 'professor' | 'admin'
         matricula?: string
         email?: string
       }

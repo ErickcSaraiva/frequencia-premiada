@@ -64,7 +64,13 @@ io.use((socket, next) => {
     const token = socket.handshake.auth.token
     if (typeof token !== 'string') throw new Error('Token ausente')
     const payload = jwt.verify(token, process.env.JWT_SECRET as string)
-    if (typeof payload === 'string' || payload.role !== 'professor') throw new Error('Acesso não autorizado')
+    if (
+      typeof payload === 'string' ||
+      typeof payload.id !== 'string' ||
+      payload.role !== 'admin'
+) {
+      throw new Error('Acesso não autorizado')
+}
     next()
   } catch {
     next(new Error('Acesso não autorizado'))

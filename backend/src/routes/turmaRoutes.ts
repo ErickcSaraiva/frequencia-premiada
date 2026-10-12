@@ -19,7 +19,7 @@ router.get('/ranking', autenticar, rankingTurmas)
 router.get(
   '/',
   autenticar,
-  autorizarRole(['professor']),
+  autorizarRole(['professor', 'admin']),
   listarTurmas,
 )
 

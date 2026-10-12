@@ -6,8 +6,9 @@ import Swal from 'sweetalert2'
 import 'sweetalert2/dist/sweetalert2.min.css'
 import heroAsset from '../assets/hero.png'
 import { API_URL } from '../config/api'
+import TurmasView from './TurmasView'
 
-export type EduPointsView = 'director' | 'home' | 'nfc' | 'attendance'
+export type EduPointsView = 'director' | 'home' | 'nfc' | 'attendance' | 'turmas'
 
 type Checkin = { id: string; data: string; status: 'presente'; alunoId: string; turmaId: string; identificacao: string; turma: string }
 type AlunoRisco = { id: string; identificacao: string; turma: string }
@@ -52,10 +53,11 @@ const attendanceRows: Array<{ nome: string; matricula: string; status: Attendanc
 ]
 
 const navItems: Array<{ view: EduPointsView; label: string; icon: string; path: string }> = [
+  { view: 'home', label: 'Início', icon: 'home', path: '/inicio' },
   { view: 'director', label: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
-  { view: 'home', label: 'Inicio', icon: 'home', path: '/inicio' },
+  { view: 'turmas', label: 'Turmas', icon: 'analytics', path: '/turmas' },
   { view: 'nfc', label: 'Chamada NFC', icon: 'nfc', path: '/chamada' },
-  { view: 'attendance', label: 'Presencas', icon: 'analytics', path: '/presencas' },
+  { view: 'attendance', label: 'Presenças', icon: 'analytics', path: '/presencas' },
 ]
 
 function initials(nome: string) {
@@ -177,7 +179,9 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
           </div>
         </div>
         <nav>
-          {navItems.map((item) => (
+          {navItems
+            .filter(item => item.view !== 'director' || professor?.perfil === 'admin')
+            .map((item) => (
             <button
               className={view === item.view ? 'active' : ''}
               key={item.view}
@@ -221,6 +225,7 @@ export default function Dashboard({ view }: { view: EduPointsView }) {
         {view === 'home' ? <HomeView navigate={navigate} handleLogout={handleLogout} /> : null}
         {view === 'nfc' ? <NfcView token={token} /> : null}
         {view === 'attendance' ? <AttendanceView presencaGeral={0} /> : null}
+        {view === 'turmas' ? <TurmasView token={token} /> : null}
       </div>
 
       <nav className="bottom-nav">
@@ -331,7 +336,7 @@ function HomeView({ navigate, handleLogout }: { navigate: (path: string) => void
         <img src={heroAsset} alt="Camadas abstratas do sistema EduPoints" />
         <div>
           <span>Sistema ativo</span>
-          <strong>Escola Municipal • Bloco B</strong>
+          <strong>Escola Educacional • Unidade A</strong>
         </div>
       </section>
 
@@ -602,17 +607,17 @@ function NfcView({ token }: { token: string | null }) {
         <aside className="nfc-side-panel">
           <section className="mini-stats">
             <MetricCard label="Presentes" value="24/30" tone="primary" detail="Aula em curso" icon="groups" />
-            <MetricCard label="Tempo restante" value="12:45" tone="neutral" detail="Fisica II" icon="schedule" />
+            <MetricCard label="Tempo restante" value="12:45" tone="neutral" detail="Ciência da Computação" icon="schedule" />
           </section>
 
           <section className="panel nfc-class-summary">
             <div>
               <span>Turma</span>
-              <strong>Fisica II</strong>
+              <strong>Ciência da Computação</strong>
             </div>
             <div>
               <span>Sala</span>
-              <strong>Bloco B - 204</strong>
+              <strong>UNIDADE A - 204</strong>
             </div>
             <div>
               <span>Status</span>

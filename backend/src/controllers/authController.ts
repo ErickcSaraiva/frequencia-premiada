@@ -40,7 +40,7 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(
       {
         id: professor.id,
-        role: 'professor',
+        role: professor.perfil,
         email: professor.email,
       },
       process.env.JWT_SECRET as string,
@@ -54,6 +54,7 @@ export const login = async (req: Request, res: Response) => {
         id: professor.id,
         nome: professor.nome,
         email: professor.email,
+        perfil: professor.perfil,
       },
     })
   } catch (error) {
